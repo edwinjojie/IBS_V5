@@ -1,0 +1,141 @@
+{
+  "alerts": [
+    {
+      "id": "alert_001",
+      "type": "weather",
+      "severity": "high",
+      "title": "Severe Thunderstorm Warning",
+      "message": "Severe thunderstorms with heavy rain and strong winds expected at JFK Airport between 15:00-19:00 EST. Flight delays and cancellations likely.",
+      "affectedAirports": ["JFK", "LGA"],
+      "affectedFlights": ["AA1234", "DL2468", "UA5790"],
+      "timestamp": "2024-12-15T14:25:00Z",
+      "status": "active",
+      "source": "National Weather Service",
+      "estimatedDuration": "4 hours",
+      "recommendations": "Consider rerouting flights, prepare for ground delays"
+    },
+    {
+      "id": "alert_002",
+      "type": "maintenance",
+      "severity": "critical",
+      "title": "Aircraft Maintenance Required",
+      "message": "Aircraft N123AA (Boeing 737-800) requires immediate inspection of hydraulic system before next scheduled flight AA1234.",
+      "affectedAirports": ["JFK"],
+      "affectedFlights": ["AA1234"],
+      "timestamp": "2024-12-15T13:45:00Z",
+      "status": "active",
+      "source": "Maintenance Control",
+      "aircraft": "N123AA",
+      "maintenanceType": "Hydraulic System Inspection",
+      "estimatedRepairTime": "2 hours"
+    },
+    {
+      "id": "alert_003",
+      "type": "security",
+      "severity": "medium",
+      "title": "Security Checkpoint Delay",
+      "message": "Extended security screening procedures in effect at Terminal 2, Gate B area. Passengers advised to arrive 30 minutes earlier.",
+      "affectedAirports": ["ATL"],
+      "affectedFlights": ["DL5678", "DL9876", "DL4321"],
+      "timestamp": "2024-12-15T12:30:00Z",
+      "status": "active",
+      "source": "TSA Operations",
+      "estimatedDuration": "3 hours",
+      "additionalInfo": "Enhanced screening due to increased passenger volume"
+    },
+    {
+      "id": "alert_004",
+      "type": "delay",
+      "severity": "medium",
+      "title": "Air Traffic Control Delay",
+      "message": "Ground stop implemented for all departures to Chicago O'Hare (ORD) due to runway construction. Average delay: 45 minutes.",
+      "affectedAirports": ["ORD"],
+      "affectedFlights": ["UA2468", "AA9876", "DL5432"],
+      "timestamp": "2024-12-15T11:15:00Z",
+      "status": "active",
+      "source": "FAA Air Traffic Control",
+      "estimatedDuration": "2 hours",
+      "reason": "Runway 10L/28R construction activities"
+    },
+    {
+      "id": "alert_005",
+      "type": "accident",
+      "severity": "high",
+      "title": "Ground Vehicle Incident",
+      "message": "Minor ground vehicle collision on Taxiway Alpha at LAX. No injuries reported. Taxiway temporarily closed for investigation.",
+      "affectedAirports": ["LAX"],
+      "affectedFlights": ["AA1234", "UA7890", "DL3456"],
+      "timestamp": "2024-12-15T10:45:00Z",
+      "status": "resolved",
+      "source": "Airport Operations",
+      "incidentType": "Ground Vehicle Collision",
+      "injuries": "None reported",
+      "estimatedClearanceTime": "30 minutes"
+    },
+    {
+      "id": "alert_006",
+      "type": "operational",
+      "severity": "low",
+      "title": "Gate Change Notification",
+      "message": "Flight AA1234 gate changed from A12 to A15 due to aircraft size requirements. Passengers notified via PA system.",
+      "affectedAirports": ["JFK"],
+      "affectedFlights": ["AA1234"],
+      "timestamp": "2024-12-15T14:10:00Z",
+      "status": "active",
+      "source": "Gate Operations",
+      "oldGate": "A12",
+      "newGate": "A15",
+      "reason": "Aircraft size compatibility"
+    },
+    {
+      "id": "alert_007",
+      "type": "fuel",
+      "severity": "medium",
+      "title": "Fuel Supply Shortage",
+      "message": "Jet fuel supply running low at Denver International Airport. Priority refueling for long-haul flights. Possible delays for domestic flights.",
+      "affectedAirports": ["DEN"],
+      "affectedFlights": ["UA9012", "SW1234", "F91567"],
+      "timestamp": "2024-12-15T09:30:00Z",
+      "status": "monitoring",
+      "source": "Fuel Operations",
+      "currentSupply": "65%",
+      "estimatedResupply": "6 hours"
+    },
+    {
+      "id": "alert_008",
+      "type": "crew",
+      "severity": "medium",
+      "title": "Crew Scheduling Issue",
+      "message": "Flight crew for DL5678 delayed due to incoming flight delay. Replacement crew being arranged. Estimated delay: 30 minutes.",
+      "affectedAirports": ["ATL"],
+      "affectedFlights": ["DL5678"],
+      "timestamp": "2024-12-15T16:00:00Z",
+      "status": "active",
+      "source": "Crew Scheduling",
+      "crewType": "Flight Crew",
+      "estimatedResolution": "30 minutes"
+    }
+  ],
+  "alertStats": {
+    "total": 8,
+    "active": 6,
+    "resolved": 1,
+    "monitoring": 1,
+    "bySeverity": {
+      "critical": 1,
+      "high": 2,
+      "medium": 4,
+      "low": 1
+    },
+    "byType": {
+      "weather": 1,
+      "maintenance": 1,
+      "security": 1,
+      "delay": 1,
+      "accident": 1,
+      "operational": 1,
+      "fuel": 1,
+      "crew": 1
+    }
+  }
+}

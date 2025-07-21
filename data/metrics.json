@@ -1,0 +1,56 @@
+{
+  "currentMetrics": {
+    "flightsToday": {
+      "value": 247,
+      "change": 12,
+      "percentage": 5.1,
+      "isPositive": true,
+      "lastUpdated": "2024-12-15T18:30:00Z"
+    },
+    "delays": {
+      "value": 18,
+      "change": -3,
+      "percentage": -14.3,
+      "isPositive": true,
+      "lastUpdated": "2024-12-15T18:30:00Z"
+    },
+    "onTimePerformance": {
+      "value": 92.7,
+      "change": 2.1,
+      "percentage": 2.3,
+      "isPositive": true,
+      "lastUpdated": "2024-12-15T18:30:00Z"
+    },
+    "cancellations": {
+      "value": 5,
+      "change": 2,
+      "percentage": 66.7,
+      "isPositive": false,
+      "lastUpdated": "2024-12-15T18:30:00Z"
+    },
+    "averageDelay": {
+      "value": 12,
+      "change": -2,
+      "percentage": -14.3,
+      "isPositive": true,
+      "unit": "minutes",
+      "lastUpdated": "2024-12-15T18:30:00Z"
+    }
+  },
+  "historicalData": {
+    "onTimePerformance": [
+      { "time": "06:00", "onTime": 95, "flights": 12, "delays": 1 },
+      { "time": "08:00", "onTime": 88, "flights": 24, "delays": 3 },
+      { "time": "10:00", "onTime": 92, "flights": 18, "delays": 2 },
+      { "time": "12:00", "onTime": 85, "flights": 32, "delays": 5 },
+      { "time": "14:00", "onTime": 90, "flights": 28, "delays": 3 },
+      { "time": "16:00", "onTime": 87, "flights": 35, "delays": 4 },
+      { "time": "18:00", "onTime": 93, "flights": 22, "delays": 2 },
+      { "time": "20:00", "onTime": 96, "flights": 16, "delays": 1 },
+      { "time": "22:00", "onTime": 94, "flights": 8, "delays": 0 },
+      { "time": "00:00", "onTime": 98, "flights": 4, "delays": 0 },
+      { "time": "02:00", "onTime": 97, "flights": 2, "delays": 0 },
+      { "time": "04:00", "onTime": 95, "flights": 6, "delays": 0 }
+    ]
+  }
+}
