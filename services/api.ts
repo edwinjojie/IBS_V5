@@ -189,6 +189,73 @@ export const metricsAPI = {
   },
 }
 
+// Mock maintenance data
+const maintenanceData = [
+  {
+    id: 'm1',
+    task: 'Engine Inspection',
+    aircraft: 'Boeing 737',
+    status: 'scheduled',
+    scheduledDate: '2024-12-16T09:00:00Z',
+    completedDate: null,
+    technician: 'John Doe',
+    notes: 'Routine check',
+  },
+  {
+    id: 'm2',
+    task: 'Landing Gear Replacement',
+    aircraft: 'Airbus A320',
+    status: 'in-progress',
+    scheduledDate: '2024-12-15T13:00:00Z',
+    completedDate: null,
+    technician: 'Jane Smith',
+    notes: 'Parts delayed',
+  },
+  {
+    id: 'm3',
+    task: 'Cabin Deep Clean',
+    aircraft: 'Boeing 777',
+    status: 'completed',
+    scheduledDate: '2024-12-14T07:00:00Z',
+    completedDate: '2024-12-14T10:00:00Z',
+    technician: 'Alex Lee',
+    notes: 'Completed successfully',
+  },
+]
+
+export interface Maintenance {
+  id: string
+  task: string
+  aircraft: string
+  status: 'scheduled' | 'in-progress' | 'completed'
+  scheduledDate: string
+  completedDate: string | null
+  technician: string
+  notes: string
+}
+
+export const maintenanceAPI = {
+  async getAll(): Promise<Maintenance[]> {
+    await simulateDelay()
+    return maintenanceData as Maintenance[]
+  },
+  async search(query: string): Promise<Maintenance[]> {
+    await simulateDelay()
+    const lowercaseQuery = query.toLowerCase()
+    return maintenanceData.filter(
+      (m) =>
+        m.task.toLowerCase().includes(lowercaseQuery) ||
+        m.aircraft.toLowerCase().includes(lowercaseQuery) ||
+        m.technician.toLowerCase().includes(lowercaseQuery) ||
+        m.status.toLowerCase().includes(lowercaseQuery)
+    ) as Maintenance[]
+  },
+  async getById(id: string): Promise<Maintenance | null> {
+    await simulateDelay()
+    return (maintenanceData.find((m) => m.id === id) as Maintenance) || null
+  },
+}
+
 // Utility functions
 export const formatTime = (timeString: string): string => {
   return new Date(timeString).toLocaleTimeString("en-US", {

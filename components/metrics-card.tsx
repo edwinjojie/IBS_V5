@@ -5,7 +5,7 @@ import { ArrowUpRight, TrendingDown, TrendingUp } from "lucide-react"
 import type React from "react"
 
 interface MetricsCardProps {
-  title: string
+  title: React.ReactNode
   value: string
   change: {
     value: string
@@ -19,18 +19,18 @@ interface MetricsCardProps {
 export function MetricsCard({ title, value, change, chart, onClick }: MetricsCardProps) {
   return (
     <Card
-      className="p-4 bg-background/60 backdrop-blur-md border-border/50 hover:bg-background/80 transition-all cursor-pointer group"
+      className="p-3 bg-background/60 backdrop-blur-md border-border/50 hover:bg-background/80 transition-all cursor-pointer group"
       onClick={onClick}
     >
-      <div className="flex items-center justify-between mb-4">
-        <h3 className="text-sm text-muted-foreground">{title}</h3>
+      <div className="flex items-center justify-between mb-2">
+        <h3 className="text-base font-semibold text-foreground leading-tight">{title}</h3>
         <div className="opacity-0 group-hover:opacity-100 transition-opacity">
           <ArrowUpRight className="h-4 w-4 text-muted-foreground" />
         </div>
       </div>
       <div className="flex items-end justify-between">
         <div>
-          <p className="text-2xl font-bold text-foreground">{value}</p>
+          <p className="text-3xl font-extrabold text-foreground leading-none">{value}</p>
           <div className="flex items-center gap-1 mt-1">
             <span className="text-sm text-muted-foreground">{change.value}</span>
             <div className="flex items-center gap-1">

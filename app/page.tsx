@@ -20,18 +20,35 @@ import {
   Filter,
   Download,
   RefreshCw,
+  Info,
+  X,
 } from "lucide-react"
 import { EnhancedAlertsPanel } from "@/components/enhanced-alerts-panel"
 import { EnhancedFlightsTable } from "@/components/enhanced-flights-table"
-import { metricsAPI, type Metrics } from "@/services/api"
+import { metricsAPI, type Metrics, flightAPI, alertAPI, maintenanceAPI } from "@/services/api"
 import { DashboardAlerts } from "@/components/dashboard-alerts"
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 
 export default function Page() {
-  const [activeTab, setActiveTab] = useState("dashboard")
-  const [selectedPeriod, setSelectedPeriod] = useState("today")
+  const [activeTab, setActiveTab] = useState(() => {
+    if (typeof window !== 'undefined') {
+      return localStorage.getItem('activeTab') || 'dashboard';
+    }
+    return 'dashboard';
+  });
+  const [selectedPeriod, setSelectedPeriod] = useState(() => {
+    if (typeof window !== 'undefined') {
+      return localStorage.getItem('selectedPeriod') || 'today';
+    }
+    return 'today';
+  });
   const [searchQuery, setSearchQuery] = useState("")
   const [isRefreshing, setIsRefreshing] = useState(false)
   const [metrics, setMetrics] = useState<Metrics | null>(null)
+  const [searchResults, setSearchResults] = useState<{ flights: any[]; alerts: any[]; maintenance: any[] }>({ flights: [], alerts: [], maintenance: [] })
+  const [searchLoading, setSearchLoading] = useState(false)
+  const [showSearchDropdown, setShowSearchDropdown] = useState(false)
+  const [expandedMetric, setExpandedMetric] = useState<string | null>(null)
 
   const loadMetrics = async () => {
     try {
@@ -46,6 +63,31 @@ export default function Page() {
     loadMetrics()
   }, [])
 
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('activeTab', activeTab)
+      localStorage.setItem('selectedPeriod', selectedPeriod)
+    }
+  }, [activeTab, selectedPeriod])
+
+  useEffect(() => {
+    if (searchQuery.trim() === "") {
+      setSearchResults({ flights: [], alerts: [], maintenance: [] })
+      setShowSearchDropdown(false)
+      return
+    }
+    setSearchLoading(true)
+    setShowSearchDropdown(true)
+    Promise.all([
+      flightAPI.searchFlights(searchQuery),
+      alertAPI.getAlerts().then(alerts => alerts.filter(a => a.title.toLowerCase().includes(searchQuery.toLowerCase()) || a.message.toLowerCase().includes(searchQuery.toLowerCase()))),
+      maintenanceAPI.search(searchQuery),
+    ]).then(([flights, alerts, maintenance]) => {
+      setSearchResults({ flights, alerts, maintenance })
+      setSearchLoading(false)
+    })
+  }, [searchQuery])
+
   const handleRefresh = async () => {
     setIsRefreshing(true)
     try {
@@ -59,8 +101,12 @@ export default function Page() {
   }
 
   const handleMetricClick = (metric: string) => {
-    console.log(`Clicked on ${metric} metric`)
-    // Navigate to detailed view
+    if (activeTab !== "dashboard") {
+      setActiveTab("dashboard")
+      setExpandedMetric(metric)
+      return
+    }
+    setExpandedMetric(expandedMetric === metric ? null : metric)
   }
 
   const navigationItems = [
@@ -98,11 +144,60 @@ export default function Page() {
             <div className="relative">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
-                placeholder="Search flights..."
+                placeholder="Search flights, alerts, maintenance..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="pl-10 bg-background/40 backdrop-blur-sm border-border/50"
+                aria-label="Global search"
+                onFocus={() => { if (searchQuery) setShowSearchDropdown(true) }}
+                onBlur={() => setTimeout(() => setShowSearchDropdown(false), 200)}
               />
+              {showSearchDropdown && (
+                <div className="absolute left-0 right-0 mt-2 bg-background border border-border/50 rounded-lg shadow-lg z-50 max-h-80 overflow-y-auto">
+                  {searchLoading ? (
+                    <div className="p-4 text-center text-muted-foreground">Searching...</div>
+                  ) : (
+                    <>
+                      {searchResults.flights.length === 0 && searchResults.alerts.length === 0 && searchResults.maintenance.length === 0 ? (
+                        <div className="p-4 text-center text-muted-foreground">No results found</div>
+                      ) : (
+                        <>
+                          {searchResults.flights.length > 0 && (
+                            <div>
+                              <div className="px-4 pt-2 pb-1 text-xs font-semibold text-muted-foreground">Flights</div>
+                              {searchResults.flights.map(f => (
+                                <div key={f.id} className="px-4 py-2 hover:bg-muted/50 cursor-pointer" onMouseDown={() => { setActiveTab("flights"); setShowSearchDropdown(false); }}>
+                                  <span className="font-medium">{f.flight}</span> <span className="text-xs text-muted-foreground">{f.route}</span>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                          {searchResults.alerts.length > 0 && (
+                            <div>
+                              <div className="px-4 pt-2 pb-1 text-xs font-semibold text-muted-foreground">Alerts</div>
+                              {searchResults.alerts.map(a => (
+                                <div key={a.id} className="px-4 py-2 hover:bg-muted/50 cursor-pointer" onMouseDown={() => { setActiveTab("alerts"); setShowSearchDropdown(false); }}>
+                                  <span className="font-medium">{a.title}</span> <span className="text-xs text-muted-foreground">{a.type}</span>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                          {searchResults.maintenance.length > 0 && (
+                            <div>
+                              <div className="px-4 pt-2 pb-1 text-xs font-semibold text-muted-foreground">Maintenance</div>
+                              {searchResults.maintenance.map(m => (
+                                <div key={m.id} className="px-4 py-2 hover:bg-muted/50 cursor-pointer" onMouseDown={() => { setActiveTab("maintenance"); setShowSearchDropdown(false); }}>
+                                  <span className="font-medium">{m.task}</span> <span className="text-xs text-muted-foreground">{m.aircraft}</span>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                        </>
+                      )}
+                    </>
+                  )}
+                </div>
+              )}
             </div>
           </div>
 
@@ -133,28 +228,50 @@ export default function Page() {
               <div className="text-sm text-muted-foreground">Today, Dec 15, 2024 - Live Data</div>
             </div>
             <div className="flex items-center gap-2">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={handleRefresh}
-                disabled={isRefreshing}
-                className="gap-2 bg-transparent"
-              >
-                <RefreshCw className={`h-4 w-4 ${isRefreshing ? "animate-spin" : ""}`} />
-                Refresh
-              </Button>
-              <Button variant="outline" className="gap-2 bg-transparent">
-                <Filter className="h-4 w-4" />
-                Filter
-              </Button>
-              <Button variant="outline" className="gap-2 bg-transparent">
-                <Download className="h-4 w-4" />
-                Export
-              </Button>
-              <Button variant="outline" className="gap-2 bg-transparent">
-                All Airports
-                <ChevronDown className="h-4 w-4" />
-              </Button>
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={handleRefresh}
+                      disabled={isRefreshing}
+                      className="gap-2 bg-transparent"
+                    >
+                      <RefreshCw className={`h-4 w-4 ${isRefreshing ? "animate-spin" : ""}`} />
+                      Refresh
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>Refresh metrics</TooltipContent>
+                </Tooltip>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button variant="outline" className="gap-2 bg-transparent">
+                      <Filter className="h-4 w-4" />
+                      Filter
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>Filter data</TooltipContent>
+                </Tooltip>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button variant="outline" className="gap-2 bg-transparent">
+                      <Download className="h-4 w-4" />
+                      Export
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>Export data</TooltipContent>
+                </Tooltip>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button variant="outline" className="gap-2 bg-transparent">
+                      All Airports
+                      <ChevronDown className="h-4 w-4" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>Select airport</TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
             </div>
           </div>
 
@@ -163,36 +280,71 @@ export default function Page() {
             <>
               {metrics && (
                 <div className="grid gap-4 md:grid-cols-3 mb-6">
-                  <MetricsCard
-                    title="Flights Today"
-                    value={metrics.flightsToday.value.toString()}
-                    change={{
-                      value: `${metrics.flightsToday.change > 0 ? "+" : ""}${metrics.flightsToday.change}`,
-                      percentage: `${metrics.flightsToday.percentage > 0 ? "+" : ""}${metrics.flightsToday.percentage}%`,
-                      isPositive: metrics.flightsToday.isPositive,
-                    }}
-                    onClick={() => handleMetricClick("flights")}
-                  />
-                  <MetricsCard
-                    title="Delays"
-                    value={metrics.delays.value.toString()}
-                    change={{
-                      value: `${metrics.delays.change > 0 ? "+" : ""}${metrics.delays.change}`,
-                      percentage: `${metrics.delays.percentage > 0 ? "+" : ""}${metrics.delays.percentage}%`,
-                      isPositive: metrics.delays.isPositive,
-                    }}
-                    onClick={() => handleMetricClick("delays")}
-                  />
-                  <MetricsCard
-                    title="On-Time Performance"
-                    value={`${metrics.onTimePerformance.value}%`}
-                    change={{
-                      value: `${metrics.onTimePerformance.change > 0 ? "+" : ""}${metrics.onTimePerformance.change}%`,
-                      percentage: `${metrics.onTimePerformance.percentage > 0 ? "+" : ""}${metrics.onTimePerformance.percentage}%`,
-                      isPositive: metrics.onTimePerformance.isPositive,
-                    }}
-                    onClick={() => handleMetricClick("performance")}
-                  />
+                  <div className="relative">
+                    <MetricsCard
+                      title={<span>Flights Today <TooltipProvider><Tooltip><TooltipTrigger asChild><Info className="inline h-4 w-4 text-muted-foreground ml-1 cursor-help" aria-label="Info about Flights Today" /></TooltipTrigger><TooltipContent>Total number of flights scheduled for today.</TooltipContent></Tooltip></TooltipProvider></span>}
+                      value={metrics.flightsToday.value.toString()}
+                      change={{
+                        value: `${metrics.flightsToday.change > 0 ? "+" : ""}${metrics.flightsToday.change}`,
+                        percentage: `${metrics.flightsToday.percentage > 0 ? "+" : ""}${metrics.flightsToday.percentage}%`,
+                        isPositive: metrics.flightsToday.isPositive,
+                      }}
+                      onClick={() => handleMetricClick("flights")}
+                    />
+                    {expandedMetric === "flights" && (
+                      <div className="absolute left-0 right-0 mt-2 z-10 bg-background border border-border/50 rounded-lg shadow-lg p-4">
+                        <div className="flex justify-between items-center mb-2">
+                          <span className="font-semibold">Flights Today Details</span>
+                          <Button variant="ghost" size="icon" onClick={() => setExpandedMetric(null)} aria-label="Close details"><X className="h-4 w-4" /></Button>
+                        </div>
+                        <EnhancedFlightsTable />
+                      </div>
+                    )}
+                  </div>
+                  <div className="relative">
+                    <MetricsCard
+                      title={<span>Delays <TooltipProvider><Tooltip><TooltipTrigger asChild><Info className="inline h-4 w-4 text-muted-foreground ml-1 cursor-help" aria-label="Info about Delays" /></TooltipTrigger><TooltipContent>Number of delayed flights today.</TooltipContent></Tooltip></TooltipProvider></span>}
+                      value={metrics.delays.value.toString()}
+                      change={{
+                        value: `${metrics.delays.change > 0 ? "+" : ""}${metrics.delays.change}`,
+                        percentage: `${metrics.delays.percentage > 0 ? "+" : ""}${metrics.delays.percentage}%`,
+                        isPositive: metrics.delays.isPositive,
+                      }}
+                      onClick={() => handleMetricClick("delays")}
+                    />
+                    {expandedMetric === "delays" && (
+                      <div className="absolute left-0 right-0 mt-2 z-10 bg-background border border-border/50 rounded-lg shadow-lg p-4">
+                        <div className="flex justify-between items-center mb-2">
+                          <span className="font-semibold">Delays Details</span>
+                          <Button variant="ghost" size="icon" onClick={() => setExpandedMetric(null)} aria-label="Close details"><X className="h-4 w-4" /></Button>
+                        </div>
+                        {/* Example: Show only delayed flights */}
+                        <EnhancedFlightsTable />
+                      </div>
+                    )}
+                  </div>
+                  <div className="relative">
+                    <MetricsCard
+                      title={<span>On-Time Performance <TooltipProvider><Tooltip><TooltipTrigger asChild><Info className="inline h-4 w-4 text-muted-foreground ml-1 cursor-help" aria-label="Info about On-Time Performance" /></TooltipTrigger><TooltipContent>Percentage of flights that departed/arrived on time.</TooltipContent></Tooltip></TooltipProvider></span>}
+                      value={`${metrics.onTimePerformance.value}%`}
+                      change={{
+                        value: `${metrics.onTimePerformance.change > 0 ? "+" : ""}${metrics.onTimePerformance.change}%`,
+                        percentage: `${metrics.onTimePerformance.percentage > 0 ? "+" : ""}${metrics.onTimePerformance.percentage}%`,
+                        isPositive: metrics.onTimePerformance.isPositive,
+                      }}
+                      onClick={() => handleMetricClick("performance")}
+                    />
+                    {expandedMetric === "performance" && (
+                      <div className="absolute left-0 right-0 mt-2 z-10 bg-background border border-border/50 rounded-lg shadow-lg p-4">
+                        <div className="flex justify-between items-center mb-2">
+                          <span className="font-semibold">On-Time Performance Details</span>
+                          <Button variant="ghost" size="icon" onClick={() => setExpandedMetric(null)} aria-label="Close details"><X className="h-4 w-4" /></Button>
+                        </div>
+                        {/* Example: Show a chart or summary */}
+                        <OperationsChart selectedPeriod={selectedPeriod} />
+                      </div>
+                    )}
+                  </div>
                 </div>
               )}
 

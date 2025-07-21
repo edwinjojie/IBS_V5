@@ -9,6 +9,8 @@ import { Input } from "@/components/ui/input"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Plane, Clock, MapPin, Users, Fuel, Search, Filter, RefreshCw, Eye, AlertCircle, X } from "lucide-react"
 import { flightAPI, alertAPI, getTimeAgo, type Flight, type Alert } from "@/services/api"
+import { Skeleton } from "@/components/ui/skeleton"
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 
 export function EnhancedFlightsTable() {
   const [flights, setFlights] = useState<Flight[]>([])
@@ -84,9 +86,19 @@ export function EnhancedFlightsTable() {
   if (loading) {
     return (
       <div className="bg-background/60 backdrop-blur-md border border-border/50 rounded-lg p-6">
-        <div className="flex items-center justify-center">
-          <RefreshCw className="h-6 w-6 animate-spin text-primary" />
-          <span className="ml-2">Loading flights...</span>
+        <div className="flex flex-col gap-2">
+          {[...Array(8)].map((_, i) => (
+            <div key={i} className="flex items-center gap-4">
+              <Skeleton className="h-8 w-8 rounded-full bg-muted" />
+              <Skeleton className="h-4 w-32 bg-muted" />
+              <Skeleton className="h-4 w-20 bg-muted" />
+              <Skeleton className="h-4 w-16 bg-muted" />
+              <Skeleton className="h-4 w-24 bg-muted" />
+              <Skeleton className="h-4 w-16 bg-muted" />
+              <Skeleton className="h-4 w-12 bg-muted" />
+              <Skeleton className="h-8 w-8 rounded bg-muted" />
+            </div>
+          ))}
         </div>
       </div>
     )
@@ -156,7 +168,7 @@ export function EnhancedFlightsTable() {
               {filteredFlights.map((flight) => {
                 const flightAlerts = getFlightAlerts(flight.flight)
                 return (
-                  <TableRow key={flight.id} className="border-border/50 hover:bg-muted/50">
+                  <TableRow key={flight.id} className="border-border/50 hover:bg-muted/50 cursor-pointer" onClick={() => setSelectedFlight(flight)}>
                     <TableCell className="font-medium">
                       <div className="flex items-center gap-3">
                         <Avatar className="h-8 w-8 bg-primary/20">
@@ -246,9 +258,16 @@ export function EnhancedFlightsTable() {
                       )}
                     </TableCell>
                     <TableCell>
-                      <Button variant="ghost" size="sm" onClick={() => setSelectedFlight(flight)}>
-                        <Eye className="h-4 w-4" />
-                      </Button>
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Button variant="ghost" size="sm" onClick={e => { e.stopPropagation(); setSelectedFlight(flight); }}>
+                              <Eye className="h-4 w-4" />
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent>View flight details</TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
                     </TableCell>
                   </TableRow>
                 )

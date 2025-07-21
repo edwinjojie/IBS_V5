@@ -1,6 +1,7 @@
 "use client"
 
 import { Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts"
+import { Skeleton } from "@/components/ui/skeleton"
 
 const data = [
   { time: "06:00", onTime: 95, flights: 12 },
@@ -19,9 +20,13 @@ const data = [
 
 interface OperationsChartProps {
   selectedPeriod: string
+  loading?: boolean
 }
 
-export function OperationsChart({ selectedPeriod }: OperationsChartProps) {
+export function OperationsChart({ selectedPeriod, loading }: OperationsChartProps) {
+  if (loading) {
+    return <div className="h-[300px] w-full flex items-center justify-center"><Skeleton className="h-48 w-full" /></div>;
+  }
   return (
     <div className="h-[300px] w-full">
       <ResponsiveContainer width="100%" height="100%">
