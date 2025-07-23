@@ -349,9 +349,6 @@ export default function Page() {
                         percentage: `${metrics.onTimePerformance.percentage > 0 ? "+" : ""}${metrics.onTimePerformance.percentage}%`,
                         isPositive: metrics.onTimePerformance.isPositive,
                       }}     
-                      //valueClassName="text-lg"              
-                      
-                      //onClick={() => handleMetricClick("performance")}
                     />
                   </div>
                   <div className="relative">
@@ -409,71 +406,96 @@ export default function Page() {
         isPositive: metrics.aircraftUtilization.isPositive,
       }}
     />
-  </div>
-
-
-
-
-
-                  
-                </div>
-
-                
-              )}
-
-              {/* Chart */}
-             {/* Chart */}
-          <Card
-            className="mb-6 p-4 bg-background/60 backdrop-blur-md border-border/50 max-w-md"
-            style={{ width: "100%", maxWidth: 400 }}
-          >
-            <div className="mb-3 flex items-center justify-between" style={{ height: 40 }}>
-              <h2 className="text-lg font-semibold text-foreground">On-Time Performance</h2>
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button size="sm" className="px-2 text-xs" variant="outline">
-                  {timePeriods.find(p => p.id === selectedPeriod)?.label || "Select Period"}
-                  <ChevronDown className="h-4 w-4 ml-1" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                {timePeriods.map((period) => (
-                  <DropdownMenuItem
-                    key={period.id}
-                    onClick={() => setSelectedPeriod(period.id)}
-                    className={selectedPeriod === period.id ? "font-semibold text-primary" : ""}
-                  >
-                    {period.label}
-                  </DropdownMenuItem>
-                ))}
-              </DropdownMenuContent>
-            </DropdownMenu>
-            </div>
-            <div className="flex flex-row items-start">
-              <div style={{ height: 150, flex: 1 }}>
-                <OperationsChart selectedPeriod={selectedPeriod} />
+  </div>  
+</div>     
+)}
+    {/* Chart */}
+      <div className="flex flex-row gap-4 mb-6 items-stretch" style={{ minHeight: 420 }}>
+        {/* On-Time Performance Card */}
+        <Card
+          className="p-4 bg-background/60 backdrop-blur-md border-border/50 max-w-md flex flex-col justify-between h-full"
+          style={{ width: "100%", maxWidth: 400 }}
+        >
+            <div>
+              <div className="mb-3 flex items-center justify-between" style={{ height: 40 }}>
+                <h2 className="text-lg font-semibold text-foreground">On-Time Performance</h2>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button size="sm" className="px-2 text-xs" variant="outline">
+                      {timePeriods.find(p => p.id === selectedPeriod)?.label || "Select Period"}
+                      <ChevronDown className="h-4 w-4 ml-1" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                    {timePeriods.map((period) => (
+                      <DropdownMenuItem
+                        key={period.id}
+                        onClick={() => setSelectedPeriod(period.id)}
+                        className={selectedPeriod === period.id ? "font-semibold text-primary" : ""}
+                      >
+                        {period.label}
+                      </DropdownMenuItem>
+                    ))}
+                  </DropdownMenuContent>
+                </DropdownMenu>
               </div>
-              {/* <div className="flex flex-col gap-1 ml-4 mt-0">
-                {timePeriods.map((period) => (
-                  <Button
-                    key={period.id}
-                    size="sm"
-                    className="px-2 text-xs"
-                    variant={selectedPeriod === period.id ? "secondary" : "ghost"}
-                    onClick={() => setSelectedPeriod(period.id)}
-                  >
-                    {period.label}
-                  </Button>
-                ))}
-              </div> */}
+              <div className="flex flex-row items-start">
+                <div style={{ height: 150, flex: 1 }}>
+                  <OperationsChart selectedPeriod={selectedPeriod} />
+                </div>
+              </div>
+              {/* Top Reasons Section */}
+              <div className="mt-1">
+                <h3 className="text-sm font-semibold mb-2 text-foreground">Attention Required</h3>
+                <div className="grid grid-cols-1 gap-2">
+                  <Card className="p-3 bg-yellow-50 border-l-4 border-yellow-50 dark:bg-yellow-50 ">
+                    <div className="flex justify-between items-center">
+                      <div>
+                        <div className="font-semibold text-yellow-800">Ground Operations</div>
+                        <div className="text-xs text-yellow-700">Baggage delays, refueling issues</div>
+                      </div>
+                      <div className="text-right">
+                        <div className="text-lg font-bold text-yellow-900">+18 min</div>
+                        <div className="text-xs text-yellow-700">Avg. delay</div>
+                      </div>
+                    </div>
+                  </Card>
+                  <Card className="p-3 bg-red-50 border-l-4 border-red-50">
+                    <div className="flex justify-between items-center">
+                      <div>
+                        <div className="font-semibold text-red-800">Crew Scheduling</div>
+                        <div className="text-xs text-red-700">Late arrivals, last-minute changes</div>
+                      </div>
+                      <div className="text-right">
+                        <div className="text-lg font-bold text-red-900">+12 min</div>
+                        <div className="text-xs text-red-700">Avg. delay</div>
+                      </div>
+                    </div>
+                  </Card>
+                  <Card className="p-3 bg-blue-50 border-l-4 border-blue-50">
+                    <div className="flex justify-between items-center">
+                      <div>
+                        <div className="font-semibold text-blue-800">ATC (Air Traffic Control)</div>
+                        <div className="text-xs text-blue-700">Congestion, slot restrictions</div>
+                      </div>
+                      <div className="text-right">
+                        <div className="text-lg font-bold text-blue-900">+9 min</div>
+                        <div className="text-xs text-blue-700">Avg. delay</div>
+                      </div>
+                    </div>
+                  </Card>
+                </div>
+              </div>
             </div>
           </Card>
-              {/* Critical Alerts Section */}
-              <div className="mb-6">
-                <DashboardAlerts onViewAll={() => setActiveTab("alerts")} />
-              </div>
-
-              {/* Flights Table */}
+          {/* Critical Alerts Section */}
+          <div className="flex-1 min-w-[260px] flex h-full">
+          <div className="w-full flex flex-col h-full">
+            <DashboardAlerts onViewAll={() => setActiveTab("alerts")} />
+          </div>
+        </div>
+      </div>            
+          {/* Flights Table */}
               <div className="mb-6">
                 <div className="mb-4 flex items-center justify-between">
                   <div>

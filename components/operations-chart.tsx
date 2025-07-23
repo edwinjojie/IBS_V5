@@ -30,7 +30,7 @@ export function OperationsChart({ selectedPeriod, loading }: OperationsChartProp
   return (
     <div className="h-[150px] w-full">
       <ResponsiveContainer width="100%" height="100%">
-        <LineChart data={data} margin={{ top: 5, right: 10, left: 0, bottom: 5 }}>
+        <LineChart data={data} margin={{ top: 10, right: 10, left: 0, bottom:0 }}>
           <XAxis dataKey="time" axisLine={false} tickLine={false} className="text-xs fill-muted-foreground" />
           <YAxis axisLine={false} tickLine={false} className="text-xs fill-muted-foreground" />
           <Tooltip

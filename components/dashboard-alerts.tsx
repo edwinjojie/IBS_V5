@@ -27,7 +27,7 @@ export function DashboardAlerts({ onViewAll }: DashboardAlertsProps) {
       // Filter for important alerts (critical and high severity, active status)
       const importantAlerts = allAlerts
         .filter((alert) => alert.status === "active" && (alert.severity === "critical" || alert.severity === "high"))
-        .slice(0, 4) // Show only top 4 most important
+        .slice(0, 5) // Show only top 5 most important
       setAlerts(importantAlerts)
     } catch (error) {
       console.error("Failed to load alerts:", error)
