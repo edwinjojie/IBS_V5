@@ -1,12 +1,16 @@
 "use client"
 
+import { useEffect, useState } from "react"
 import { Avatar } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { Badge } from "@/components/ui/badge"
 import { MoreHorizontal, Plane, Clock, MapPin, Users } from "lucide-react"
-import { useState } from "react"
+
+interface FlightsTableProps {
+  statusFilter?: Flight["status"] | null
+}
 
 interface Flight {
   id: string
@@ -64,11 +68,23 @@ const initialFlights: Flight[] = [
   },
 ]
 
-export function FlightsTable() {
+export function FlightsTable({ statusFilter }: FlightsTableProps) {
   const [flights, setFlights] = useState<Flight[]>(initialFlights)
 
+  useEffect(() => {
+    let filtered = initialFlights
+    if (statusFilter) {
+      filtered = filtered.filter((f) => f.status === statusFilter)
+    }
+    setFlights(filtered)
+  }, [statusFilter])
+
   const handleStatusChange = (flightId: string, newStatus: Flight["status"]) => {
-    setFlights((prev) => prev.map((flight) => (flight.id === flightId ? { ...flight, status: newStatus } : flight)))
+    setFlights((prev) =>
+      prev.map((flight) =>
+        flight.id === flightId ? { ...flight, status: newStatus } : flight
+      )
+    )
   }
 
   const getStatusColor = (status: Flight["status"]) => {

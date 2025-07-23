@@ -7,6 +7,8 @@ import { Input } from "@/components/ui/input"
 import { MetricsCard } from "@/components/metrics-card"
 import { OperationsChart } from "@/components/operations-chart"
 import { ThemeToggle } from "@/components/theme-toggle"
+import type { Flight } from "@/services/api"
+
 import {
   Bell,
   ChevronDown,
@@ -50,6 +52,9 @@ export default function Page() {
   const [searchLoading, setSearchLoading] = useState(false)
   const [showSearchDropdown, setShowSearchDropdown] = useState(false)
   const [expandedMetric, setExpandedMetric] = useState<string | null>(null)
+  const [flightStatusFilter, setFlightStatusFilter] = useState<Flight["status"] | null>(null)
+
+  
 
   const loadMetrics = async () => {
     try {
@@ -70,6 +75,13 @@ export default function Page() {
       localStorage.setItem('selectedPeriod', selectedPeriod)
     }
   }, [activeTab, selectedPeriod])
+
+  useEffect(() => {
+  if (activeTab !== "flights") {
+    setFlightStatusFilter(null)
+  }
+}, [activeTab])
+
 
   useEffect(() => {
     if (searchQuery.trim() === "") {
@@ -298,7 +310,8 @@ export default function Page() {
                           <span className="font-semibold">Flights Today Details</span>
                           <Button variant="ghost" size="icon" onClick={() => setExpandedMetric(null)} aria-label="Close details"><X className="h-4 w-4" /></Button>
                         </div>
-                        <EnhancedFlightsTable />
+                        <EnhancedFlightsTable statusFilter={null} />
+
                       </div>
                     )}
                   </div>
@@ -311,32 +324,25 @@ export default function Page() {
                         percentage: `${metrics.delays.percentage > 0 ? "+" : ""}${metrics.delays.percentage}%`,
                         isPositive: metrics.delays.isPositive,
                       }}
-                      onClick={() => handleMetricClick("delays")}
+                      onClick={() => {
+                        setActiveTab("flights")
+                        setFlightStatusFilter("Delayed")}}
                     />
-                    {expandedMetric === "delays" && (
-                      <div className="absolute left-0 right-0 mt-2 z-10 bg-background border border-border/50 rounded-lg shadow-lg p-4">
-                        <div className="flex justify-between items-center mb-2">
-                          <span className="font-semibold">Delays Details</span>
-                          <Button variant="ghost" size="icon" onClick={() => setExpandedMetric(null)} aria-label="Close details"><X className="h-4 w-4" /></Button>
-                        </div>
-                        {/* Example: Show only delayed flights */}
-                        <EnhancedFlightsTable />
-                      </div>
-                    )}
+                    
                   </div>
                   <div className="relative">
                     <MetricsCard
                       title={<div className="flex items-center gap-1"><span className="text-sm">OTP</span>  <TooltipProvider><Tooltip>
-          <TooltipTrigger asChild>
-            <span>
-              <Info className="inline h-4 w-4 text-muted-foreground cursor-help" />
-            </span>
-          </TooltipTrigger>
-          <TooltipContent>
-            Percentage of flights that departed/arrived on time.
-          </TooltipContent>
-        </Tooltip>
-      </TooltipProvider> </div>}
+                        <TooltipTrigger asChild>
+                         <span>
+                          <Info className="inline h-4 w-4 text-muted-foreground cursor-help" />
+                         </span>
+                      </TooltipTrigger>
+                         <TooltipContent>
+                            Percentage of flights that departed/arrived on time.
+                         </TooltipContent>
+                           </Tooltip>
+                         </TooltipProvider> </div>}
                       value={`${metrics.onTimePerformance.value}%`}
                       change={{
                         value: `${metrics.onTimePerformance.change > 0 ? "+" : ""}${metrics.onTimePerformance.change}%`,
@@ -478,7 +484,8 @@ export default function Page() {
                     View All Flights
                   </Button>
                 </div>
-                <EnhancedFlightsTable />
+                <EnhancedFlightsTable statusFilter={flightStatusFilter} />
+
               </div>
             </>
           )}
@@ -499,7 +506,7 @@ export default function Page() {
                 <h2 className="text-lg font-semibold text-foreground">Flight Operations</h2>
                 <p className="text-sm text-muted-foreground">Real-time flight tracking and management</p>
               </div>
-              <EnhancedFlightsTable />
+              <EnhancedFlightsTable statusFilter={flightStatusFilter} />
             </div>
           )}
 

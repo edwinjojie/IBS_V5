@@ -12,17 +12,33 @@ import { flightAPI, alertAPI, getTimeAgo, type Flight, type Alert } from "@/serv
 import { Skeleton } from "@/components/ui/skeleton"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 
-export function EnhancedFlightsTable() {
+interface EnhancedFlightsTableProps {
+  statusFilter?: Flight["status"] | "all" | null;
+}
+
+export function EnhancedFlightsTable({ statusFilter }: EnhancedFlightsTableProps) {
   const [flights, setFlights] = useState<Flight[]>([])
   const [alerts, setAlerts] = useState<Alert[]>([])
   const [loading, setLoading] = useState(true)
   const [searchQuery, setSearchQuery] = useState("")
-  const [statusFilter, setStatusFilter] = useState("all")
   const [selectedFlight, setSelectedFlight] = useState<Flight | null>(null)
+  //const [customStatus, setCustomStatus] = useState<Flight["status"] | "all">("all")
+  const [localStatusFilter, setLocalStatusFilter] = useState<Flight["status"] | "all">("all")
+
+
 
   useEffect(() => {
     loadData()
   }, [])
+
+  
+useEffect(() => {
+  if (statusFilter) {
+    setLocalStatusFilter(statusFilter)
+  }
+}, [statusFilter])
+
+
 
   const loadData = async () => {
     setLoading(true)
@@ -71,17 +87,24 @@ export function EnhancedFlightsTable() {
     return alerts.filter((alert) => alert.affectedFlights.includes(flightNumber) && alert.status === "active")
   }
 
+  const mergedStatusFilter = localStatusFilter
+
+
+
   const filteredFlights = flights.filter((flight) => {
-    const matchesSearch =
-      searchQuery === "" ||
-      flight.flight.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      flight.airline.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      flight.route.toLowerCase().includes(searchQuery.toLowerCase())
+  const matchesSearch =
+    searchQuery === "" ||
+    flight.flight.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    flight.airline.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    flight.route.toLowerCase().includes(searchQuery.toLowerCase())
 
-    const matchesStatus = statusFilter === "all" || flight.status === statusFilter
+  const matchesStatus =
+    localStatusFilter === "all" || flight.status === localStatusFilter
 
-    return matchesSearch && matchesStatus
-  })
+  return matchesSearch && matchesStatus
+})
+
+
 
   if (loading) {
     return (
@@ -103,6 +126,7 @@ export function EnhancedFlightsTable() {
       </div>
     )
   }
+  
 
   return (
     <div className="space-y-4">
@@ -119,8 +143,8 @@ export function EnhancedFlightsTable() {
             />
           </div>
           <select
-            value={statusFilter}
-            onChange={(e) => setStatusFilter(e.target.value)}
+            value={localStatusFilter}
+            onChange={(e) => setLocalStatusFilter(e.target.value as Flight["status"] | "all")}
             className="px-3 py-2 text-sm bg-background/60 border border-border/50 rounded-md"
           >
             <option value="all">All Status</option>
