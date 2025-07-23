@@ -130,7 +130,7 @@ export default function Page() {
 
   return (
     <div className="min-h-screen bg-background text-foreground">
-      <div className="grid lg:grid-cols-[280px_1fr]">
+      <div className="grid lg:grid-cols-[200px_1fr]">
         {/* Sidebar */}
         <aside className="border-r border-border bg-background/60 backdrop-blur-md">
           <div className="flex h-16 items-center justify-between border-b border-border px-6">
@@ -280,7 +280,7 @@ export default function Page() {
           {activeTab === "dashboard" && (
             <>
               {metrics && (
-                <div className="grid gap-4 md:grid-cols-3 mb-6">
+                <div className="grid gap-4 md:grid-cols-5 mb-6">
                   <div className="relative">
                     <MetricsCard
                       title={<span>Flights Today <TooltipProvider><Tooltip><TooltipTrigger asChild><Info className="inline h-4 w-4 text-muted-foreground ml-1 cursor-help" aria-label="Info about Flights Today" /></TooltipTrigger><TooltipContent>Total number of flights scheduled for today.</TooltipContent></Tooltip></TooltipProvider></span>}
@@ -326,16 +326,93 @@ export default function Page() {
                   </div>
                   <div className="relative">
                     <MetricsCard
-                      title={<span>On-Time Performance <TooltipProvider><Tooltip><TooltipTrigger asChild><Info className="inline h-4 w-4 text-muted-foreground ml-1 cursor-help" aria-label="Info about On-Time Performance" /></TooltipTrigger><TooltipContent>Percentage of flights that departed/arrived on time.</TooltipContent></Tooltip></TooltipProvider></span>}
+                      title={<div className="flex items-center gap-1"><span className="text-sm">OTP</span>  <TooltipProvider><Tooltip>
+          <TooltipTrigger asChild>
+            <span>
+              <Info className="inline h-4 w-4 text-muted-foreground cursor-help" />
+            </span>
+          </TooltipTrigger>
+          <TooltipContent>
+            Percentage of flights that departed/arrived on time.
+          </TooltipContent>
+        </Tooltip>
+      </TooltipProvider> </div>}
                       value={`${metrics.onTimePerformance.value}%`}
                       change={{
                         value: `${metrics.onTimePerformance.change > 0 ? "+" : ""}${metrics.onTimePerformance.change}%`,
                         percentage: `${metrics.onTimePerformance.percentage > 0 ? "+" : ""}${metrics.onTimePerformance.percentage}%`,
                         isPositive: metrics.onTimePerformance.isPositive,
-                      }}                   
+                      }}     
+                      //valueClassName="text-lg"              
+                      
+                      //onClick={() => handleMetricClick("performance")}
                     />
                   </div>
+                  <div className="relative">
+                  <MetricsCard
+                     title={
+                     <div className="flex items-center gap-1">
+                      <span>Cancellation Rate</span>
+                       <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <span>
+                  <Info className="inline h-4 w-4 text-muted-foreground cursor-help" />
+                </span>
+              </TooltipTrigger>
+              <TooltipContent>
+                Percentage of cancelled flights today
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+        </div>
+      }
+      value={`${metrics.cancellationRate.value.toFixed(1)}%`}
+      change={{
+        value: `${metrics.cancellationRate.change > 0 ? "+" : ""}${metrics.cancellationRate.change.toFixed(1)}%`,
+        percentage: `${metrics.cancellationRate.percentage > 0 ? "+" : ""}${metrics.cancellationRate.percentage.toFixed(1)}%`,
+        isPositive: metrics.cancellationRate.isPositive,
+      }}
+    />
+  </div>
+
+  {/*  Aircraft Utilization card */}
+  <div className="relative">
+    <MetricsCard
+      title={
+        <div className="flex items-center gap-1">
+          <span>Aircraft Utilization</span>
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <span>
+                  <Info className="inline h-4 w-4 text-muted-foreground cursor-help" />
+                </span>
+              </TooltipTrigger>
+              <TooltipContent>
+                Avg. daily hours flown per aircraft
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+        </div>
+      }
+      value={`${metrics.aircraftUtilization.value.toFixed(1)}${metrics.aircraftUtilization.unit || 'h'}`}
+      change={{
+        value: `${metrics.aircraftUtilization.change > 0 ? "+" : ""}${metrics.aircraftUtilization.change.toFixed(1)}${metrics.aircraftUtilization.unit || 'h'}`,
+        percentage: `${metrics.aircraftUtilization.percentage > 0 ? "+" : ""}${metrics.aircraftUtilization.percentage.toFixed(1)}%`,
+        isPositive: metrics.aircraftUtilization.isPositive,
+      }}
+    />
+  </div>
+
+
+
+
+
+                  
                 </div>
+
+                
               )}
 
               {/* Chart */}

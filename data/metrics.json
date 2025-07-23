@@ -35,7 +35,25 @@
       "isPositive": true,
       "unit": "minutes",
       "lastUpdated": "2024-12-15T18:30:00Z"
+    },
+    "cancellationRate": {
+      "value": 1.5,
+      "change": -0.3,
+      "percentage": -16,
+      "isPositive": true,
+      "lastUpdated": "2025-07-23T09:00:00Z"
+    },
+    "aircraftUtilization": {
+      "value": 11.2,
+      "change": 0.3,
+      "percentage": 2.8,
+      "unit": "h",
+      "isPositive": true,
+      "lastUpdated": "2025-07-23T09:00:00Z"
     }
+  
+    
+
   },
   "historicalData": {
     "onTimePerformance": [

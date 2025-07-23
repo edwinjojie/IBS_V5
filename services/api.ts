@@ -101,7 +101,24 @@ export interface Metrics {
     unit: string
     lastUpdated: string
   }
+  cancellationRate: {
+    value: number
+    change: number
+    percentage: number
+    isPositive: boolean
+    lastUpdated: string
+  }
+  aircraftUtilization: {
+    value: number
+    change: number
+    percentage: number
+    isPositive: boolean
+    unit: string
+    lastUpdated: string
+  }
 }
+
+
 
 // API Functions
 export const flightAPI = {

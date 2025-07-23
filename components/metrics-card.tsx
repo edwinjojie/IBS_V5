@@ -14,9 +14,10 @@ interface MetricsCardProps {
   }
   chart?: React.ReactNode
   onClick?: () => void
+  valueClassName?: string
 }
 
-export function MetricsCard({ title, value, change, chart, onClick }: MetricsCardProps) {
+export function MetricsCard({ title, value, change, chart, onClick,valueClassName }: MetricsCardProps) {
   return (
     <Card
       className="p-3 bg-background/60 backdrop-blur-md border-border/50 hover:bg-background/80 transition-all cursor-pointer group"
@@ -30,7 +31,7 @@ export function MetricsCard({ title, value, change, chart, onClick }: MetricsCar
       </div>
       <div className="flex items-end justify-between">
         <div>
-          <p className="text-3xl font-extrabold text-foreground leading-none">{value}</p>
+          <p className={`font-extrabold text-foreground leading-none ${valueClassName || 'text-3xl'}`}>{value}</p>
           <div className="flex items-center gap-1 mt-1">
             <span className="text-sm text-muted-foreground">{change.value}</span>
             <div className="flex items-center gap-1">
