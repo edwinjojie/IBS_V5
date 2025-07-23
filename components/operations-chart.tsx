@@ -28,9 +28,9 @@ export function OperationsChart({ selectedPeriod, loading }: OperationsChartProp
     return <div className="h-[300px] w-full flex items-center justify-center"><Skeleton className="h-48 w-full" /></div>;
   }
   return (
-    <div className="h-[300px] w-full">
+    <div className="h-[150px] w-full">
       <ResponsiveContainer width="100%" height="100%">
-        <LineChart data={data} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
+        <LineChart data={data} margin={{ top: 5, right: 10, left: 0, bottom: 5 }}>
           <XAxis dataKey="time" axisLine={false} tickLine={false} className="text-xs fill-muted-foreground" />
           <YAxis axisLine={false} tickLine={false} className="text-xs fill-muted-foreground" />
           <Tooltip

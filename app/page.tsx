@@ -23,6 +23,7 @@ import {
   Info,
   X,
 } from "lucide-react"
+import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from "@/components/ui/dropdown-menu"
 import { EnhancedAlertsPanel } from "@/components/enhanced-alerts-panel"
 import { EnhancedFlightsTable } from "@/components/enhanced-flights-table"
 import { metricsAPI, type Metrics, flightAPI, alertAPI, maintenanceAPI } from "@/services/api"
@@ -331,43 +332,59 @@ export default function Page() {
                         value: `${metrics.onTimePerformance.change > 0 ? "+" : ""}${metrics.onTimePerformance.change}%`,
                         percentage: `${metrics.onTimePerformance.percentage > 0 ? "+" : ""}${metrics.onTimePerformance.percentage}%`,
                         isPositive: metrics.onTimePerformance.isPositive,
-                      }}
-                      onClick={() => handleMetricClick("performance")}
+                      }}                   
                     />
-                    {expandedMetric === "performance" && (
-                      <div className="absolute left-0 right-0 mt-2 z-10 bg-background border border-border/50 rounded-lg shadow-lg p-4">
-                        <div className="flex justify-between items-center mb-2">
-                          <span className="font-semibold">On-Time Performance Details</span>
-                          <Button variant="ghost" size="icon" onClick={() => setExpandedMetric(null)} aria-label="Close details"><X className="h-4 w-4" /></Button>
-                        </div>
-                        {/* Example: Show a chart or summary */}
-                        <OperationsChart selectedPeriod={selectedPeriod} />
-                      </div>
-                    )}
                   </div>
                 </div>
               )}
 
               {/* Chart */}
-              <Card className="mb-6 p-6 bg-background/60 backdrop-blur-md border-border/50">
-                <div className="mb-4 flex items-center justify-between">
-                  <h2 className="text-lg font-semibold text-foreground">On-Time Performance</h2>
-                  <div className="flex gap-2">
-                    {timePeriods.map((period) => (
-                      <Button
-                        key={period.id}
-                        size="sm"
-                        variant={selectedPeriod === period.id ? "secondary" : "ghost"}
-                        onClick={() => setSelectedPeriod(period.id)}
-                      >
-                        {period.label}
-                      </Button>
-                    ))}
-                  </div>
-                </div>
+             {/* Chart */}
+          <Card
+            className="mb-6 p-4 bg-background/60 backdrop-blur-md border-border/50 max-w-md"
+            style={{ width: "100%", maxWidth: 400 }}
+          >
+            <div className="mb-3 flex items-center justify-between" style={{ height: 40 }}>
+              <h2 className="text-lg font-semibold text-foreground">On-Time Performance</h2>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button size="sm" className="px-2 text-xs" variant="outline">
+                  {timePeriods.find(p => p.id === selectedPeriod)?.label || "Select Period"}
+                  <ChevronDown className="h-4 w-4 ml-1" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                {timePeriods.map((period) => (
+                  <DropdownMenuItem
+                    key={period.id}
+                    onClick={() => setSelectedPeriod(period.id)}
+                    className={selectedPeriod === period.id ? "font-semibold text-primary" : ""}
+                  >
+                    {period.label}
+                  </DropdownMenuItem>
+                ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
+            </div>
+            <div className="flex flex-row items-start">
+              <div style={{ height: 150, flex: 1 }}>
                 <OperationsChart selectedPeriod={selectedPeriod} />
-              </Card>
-
+              </div>
+              {/* <div className="flex flex-col gap-1 ml-4 mt-0">
+                {timePeriods.map((period) => (
+                  <Button
+                    key={period.id}
+                    size="sm"
+                    className="px-2 text-xs"
+                    variant={selectedPeriod === period.id ? "secondary" : "ghost"}
+                    onClick={() => setSelectedPeriod(period.id)}
+                  >
+                    {period.label}
+                  </Button>
+                ))}
+              </div> */}
+            </div>
+          </Card>
               {/* Critical Alerts Section */}
               <div className="mb-6">
                 <DashboardAlerts onViewAll={() => setActiveTab("alerts")} />
