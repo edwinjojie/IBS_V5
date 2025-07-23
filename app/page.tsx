@@ -289,7 +289,7 @@ export default function Page() {
                         percentage: `${metrics.flightsToday.percentage > 0 ? "+" : ""}${metrics.flightsToday.percentage}%`,
                         isPositive: metrics.flightsToday.isPositive,
                       }}
-                      onClick={() => handleMetricClick("flights")}
+                      onClick={() => setActiveTab("flights")}
                     />
                     {expandedMetric === "flights" && (
                       <div className="absolute left-0 right-0 mt-2 z-10 bg-background border border-border/50 rounded-lg shadow-lg p-4">
