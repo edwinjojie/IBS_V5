@@ -1,38 +1,17 @@
 "use client"
 
-import { useState, useEffect } from "react"
-import { Button } from "@/components/ui/button"
-import { Card } from "@/components/ui/card"
-import { Input } from "@/components/ui/input"
-import { MetricsCard } from "@/components/metrics-card"
-import { OperationsChart } from "@/components/operations-chart"
-import { ThemeToggle } from "@/components/theme-toggle"
-import type { Flight } from "@/services/api"
+import { useEffect } from "react"
+import { useRouter } from "next/navigation"
 
-import {
-  Bell,
-  ChevronDown,
-  CloudSun,
-  LayoutDashboard,
-  LifeBuoy,
-  Plane,
-  Settings,
-  Wrench,
-  Search,
-  Filter,
-  Download,
-  RefreshCw,
-  Info,
-  X,
-} from "lucide-react"
-import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from "@/components/ui/dropdown-menu"
-import { EnhancedAlertsPanel } from "@/components/enhanced-alerts-panel"
-import { EnhancedFlightsTable } from "@/components/enhanced-flights-table"
-import { metricsAPI, type Metrics, flightAPI, alertAPI, maintenanceAPI } from "@/services/api"
-import { DashboardAlerts } from "@/components/dashboard-alerts"
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
+export default function Home() {
+  const router = useRouter()
+  useEffect(() => {
+    router.replace("/login")
+  }, [router])
+  return null
+}
 
-export default function Page() {
+/*export default function DashboardPage() {
   const [activeTab, setActiveTab] = useState(() => {
     if (typeof window !== 'undefined') {
       return localStorage.getItem('activeTab') || 'dashboard';
@@ -143,8 +122,9 @@ export default function Page() {
   return (
     <div className="min-h-screen bg-background text-foreground">
       <div className="grid lg:grid-cols-[200px_1fr]">
-        {/* Sidebar */}
-        <aside className="border-r border-border bg-background/60 backdrop-blur-md">
+        {/* Sidebar *//*}
+        <aside className="border-r border-border bg-background/60 backdrop-blur-md sticky top-0 h-screen flex flex-col">
+
           <div className="flex h-16 items-center justify-between border-b border-border px-6">
             <div className="flex items-center gap-2">
               <Plane className="h-6 w-6 text-primary" />
@@ -232,9 +212,9 @@ export default function Page() {
           </nav>
         </aside>
 
-        {/* Main Content */}
+        {/* Main Content *//*}
         <main className="p-6">
-          {/* Header */}
+          {/* Header *//*}
           <div className="mb-6 flex items-center justify-between">
             <div className="space-y-1">
               <h1 className="text-2xl font-bold text-foreground">Operations Overview</h1>
@@ -288,7 +268,7 @@ export default function Page() {
             </div>
           </div>
 
-          {/* Content based on active tab */}
+          {/* Content based on active tab *//*}
           {activeTab === "dashboard" && (
             <>
               {metrics && (
@@ -379,7 +359,7 @@ export default function Page() {
     />
   </div>
 
-  {/*  Aircraft Utilization card */}
+  {/*  Aircraft Utilization card *//*}
   <div className="relative">
     <MetricsCard
       title={
@@ -409,9 +389,9 @@ export default function Page() {
   </div>  
 </div>     
 )}
-    {/* Chart */}
+    {/* Chart *//*}
       <div className="flex flex-row gap-4 mb-6 items-stretch" style={{ minHeight: 420 }}>
-        {/* On-Time Performance Card */}
+        {/* On-Time Performance Card *//*}
         <Card
           className="p-4 bg-background/60 backdrop-blur-md border-border/50 max-w-md flex flex-col justify-between h-full"
           style={{ width: "100%", maxWidth: 400 }}
@@ -444,7 +424,7 @@ export default function Page() {
                   <OperationsChart selectedPeriod={selectedPeriod} />
                 </div>
               </div>
-              {/* Top Reasons Section */}
+              {/* Top Reasons Section *//*}
               <div className="mt-1">
                 <h3 className="text-sm font-semibold mb-2 text-foreground">Attention Required</h3>
                 <div className="grid grid-cols-1 gap-2">
@@ -488,14 +468,14 @@ export default function Page() {
               </div>
             </div>
           </Card>
-          {/* Critical Alerts Section */}
+          {/* Critical Alerts Section *//*}
           <div className="flex-1 min-w-[260px] flex h-full">
           <div className="w-full flex flex-col h-full">
             <DashboardAlerts onViewAll={() => setActiveTab("alerts")} />
           </div>
         </div>
       </div>            
-          {/* Flights Table */}
+          {/* Flights Table *//*}
               <div className="mb-6">
                 <div className="mb-4 flex items-center justify-between">
                   <div>
@@ -549,3 +529,4 @@ export default function Page() {
     </div>
   )
 }
+*/
