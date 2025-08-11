@@ -8,12 +8,46 @@ import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Plane, Clock, MapPin, Users, Fuel, Search, Filter, RefreshCw, Eye, AlertCircle, X } from "lucide-react"
-import { flightAPI, alertAPI, getTimeAgo, type Flight, type Alert } from "@/services/api"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 
+interface Flight {
+  id: string
+  flight: string
+  airline: string
+  route: string
+  status: "On Time" | "Delayed" | "Boarding" | "Departed" | "Cancelled"
+  scheduled: string
+  actual: string
+  estimatedArrival: string
+  progress: number
+  priority: "high" | "medium" | "low"
+  aircraft: string
+  registration: string
+  fuel: number
+  passengers: number
+  capacity: number
+  gate: string
+  terminal: string
+  cancellationReason?: string
+  crew: { captain: string; firstOfficer: string }
+  weather: string
+  lastUpdate: string
+}
+
+interface Alert {
+  id: string
+  type: string
+  title: string
+  message: string
+  timestamp: string
+  status: "active" | "resolved" | "monitoring"
+  severity: "critical" | "high" | "medium" | "low"
+  affectedFlights: string[]
+}
+
 interface EnhancedFlightsTableProps {
-  statusFilter?: Flight["status"] | "all" | null;
+  statusFilter?: Flight["status"] | "all" | null
 }
 
 export function EnhancedFlightsTable({ statusFilter }: EnhancedFlightsTableProps) {
@@ -22,28 +56,28 @@ export function EnhancedFlightsTable({ statusFilter }: EnhancedFlightsTableProps
   const [loading, setLoading] = useState(true)
   const [searchQuery, setSearchQuery] = useState("")
   const [selectedFlight, setSelectedFlight] = useState<Flight | null>(null)
-  //const [customStatus, setCustomStatus] = useState<Flight["status"] | "all">("all")
   const [localStatusFilter, setLocalStatusFilter] = useState<Flight["status"] | "all">("all")
 
-
-
   useEffect(() => {
-    loadData()
-  }, [])
-
-  
-useEffect(() => {
-  if (statusFilter) {
-    setLocalStatusFilter(statusFilter)
-  }
-}, [statusFilter])
-
-
+    if (statusFilter) {
+      setLocalStatusFilter(statusFilter)
+    }
+  }, [statusFilter])
 
   const loadData = async () => {
     setLoading(true)
     try {
-      const [flightsData, alertsData] = await Promise.all([flightAPI.getFlights(), alertAPI.getAlerts()])
+      const token = localStorage.getItem("token")
+      const [flightsResponse, alertsResponse] = await Promise.all([
+        fetch("http://localhost:3001/api/flights", {
+          headers: { Authorization: `Bearer ${token}` },
+        }),
+        fetch("http://localhost:3001/api/alerts", {
+          headers: { Authorization: `Bearer ${token}` },
+        }),
+      ])
+      const flightsData = await flightsResponse.json()
+      const alertsData = await alertsResponse.json()
       setFlights(flightsData)
       setAlerts(alertsData)
     } catch (error) {
@@ -52,6 +86,10 @@ useEffect(() => {
       setLoading(false)
     }
   }
+
+  useEffect(() => {
+    loadData()
+  }, [])
 
   const getStatusColor = (status: Flight["status"]) => {
     switch (status) {
@@ -87,24 +125,26 @@ useEffect(() => {
     return alerts.filter((alert) => alert.affectedFlights.includes(flightNumber) && alert.status === "active")
   }
 
-  const mergedStatusFilter = localStatusFilter
-
-
-
   const filteredFlights = flights.filter((flight) => {
-  const matchesSearch =
-    searchQuery === "" ||
-    flight.flight.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    flight.airline.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    flight.route.toLowerCase().includes(searchQuery.toLowerCase())
+    const matchesSearch =
+      searchQuery === "" ||
+      flight.flight.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      flight.airline.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      flight.route.toLowerCase().includes(searchQuery.toLowerCase())
+    const matchesStatus = localStatusFilter === "all" || flight.status === localStatusFilter
+    return matchesSearch && matchesStatus
+  })
 
-  const matchesStatus =
-    localStatusFilter === "all" || flight.status === localStatusFilter
-
-  return matchesSearch && matchesStatus
-})
-
-
+  const getTimeAgo = (timestamp: string) => {
+    const now = new Date()
+    const diff = now.getTime() - new Date(timestamp).getTime()
+    const minutes = Math.floor(diff / 1000 / 60)
+    if (minutes < 1) return "Just now"
+    if (minutes < 60) return `${minutes} min ago`
+    const hours = Math.floor(minutes / 60)
+    if (hours < 24) return `${hours} hr${hours > 1 ? "s" : ""} ago`
+    return `${Math.floor(hours / 24)} day${hours >= 48 ? "s" : ""} ago`
+  }
 
   if (loading) {
     return (
@@ -126,7 +166,6 @@ useEffect(() => {
       </div>
     )
   }
-  
 
   return (
     <div className="space-y-4">
@@ -301,7 +340,7 @@ useEffect(() => {
         </ScrollArea>
       </div>
 
-      {/* Flight Details Modal (simplified) */}
+      {/* Flight Details Modal */}
       {selectedFlight && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
           <div className="bg-background/95 backdrop-blur-md border border-border/50 rounded-lg p-6 max-w-2xl w-full max-h-[80vh] overflow-y-auto">

@@ -1,29 +1,44 @@
 "use client"
 
 import { useState } from "react"
+import { useRouter } from "next/navigation"
 import { Card } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { Plane } from "lucide-react"
 
 export default function LoginPage() {
-  const [email, setEmail] = useState("")
+  const [username, setUsername] = useState("")
   const [password, setPassword] = useState("")
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState("")
+  const router = useRouter()
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()
     setLoading(true)
     setError("")
-    setTimeout(() => {
-      setLoading(false)
-      if (!email || !password) {
-        setError("Please enter both email and password.")
-      } else {
-        // Success: You can add redirect logic here later
+
+    try {
+      const response = await fetch("http://localhost:3001/api/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ username, password }),
+      })
+
+      const data = await response.json()
+      if (!response.ok) {
+        throw new Error(data.error || "Login failed")
       }
-    }, 1000)
+
+      // Store JWT token in localStorage
+      localStorage.setItem("token", data.token)
+      router.push("/dashboard")
+    } catch (err: any) {
+      setError(err.message || "An error occurred")
+    } finally {
+      setLoading(false)
+    }
   }
 
   return (
@@ -42,13 +57,13 @@ export default function LoginPage() {
           </div>
           <form onSubmit={handleLogin} className="space-y-4 w-full">
             <div>
-              <label htmlFor="email" className="block text-sm font-medium mb-1">Email</label>
+              <label htmlFor="username" className="block text-sm font-medium mb-1">Username</label>
               <Input
-                id="email"
-                type="email"
-                autoComplete="email"
-                value={email}
-                onChange={e => setEmail(e.target.value)}
+                id="username"
+                type="text"
+                autoComplete="username"
+                value={username}
+                onChange={e => setUsername(e.target.value)}
                 required
                 className="bg-background/30 backdrop-blur-sm border-border/50"
               />

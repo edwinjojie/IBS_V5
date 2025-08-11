@@ -1,0 +1,21 @@
+{
+  "name": "ibs-v5-data-services",
+  "version": "1.0.0",
+  "description": "Backend for IBS_V5 dashboard",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js",
+    "seed": "node seed.js"
+  },
+  "dependencies": {
+  "express": "^4.19.2",
+  "mongoose": "^8.17.0",
+  "cors": "^2.8.5",
+  "dotenv": "^17.2.1",
+  "bcryptjs": "^2.4.3",
+  "jsonwebtoken": "^9.0.2"
+},
+  "keywords": [],
+  "author": "",
+  "license": "ISC"
+}

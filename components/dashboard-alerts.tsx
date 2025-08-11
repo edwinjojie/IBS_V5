@@ -5,8 +5,19 @@ import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { ScrollArea } from "@/components/ui/scroll-area"
-import { AlertTriangle, Info, Cloud, Wrench, Shield, Clock, Settings, Fuel, Users, ChevronRight, X } from "lucide-react"
-import { alertAPI, getTimeAgo, type Alert } from "@/services/api"
+import { Info, Cloud, Shield, Clock, AlertTriangle, Settings, Fuel, Users, ChevronRight, X } from "lucide-react"
+
+interface Alert {
+  id: string
+  type: "weather" | "security" | "delay" | "accident" | "operational" | "fuel" | "crew"
+  title: string
+  message: string
+  timestamp: string
+  status: "active" | "resolved" | "monitoring"
+  severity: "critical" | "high" | "medium" | "low"
+  affectedFlights: string[]
+  estimatedDuration?: string
+}
 
 interface DashboardAlertsProps {
   onViewAll: () => void
@@ -23,11 +34,13 @@ export function DashboardAlerts({ onViewAll }: DashboardAlertsProps) {
   const loadImportantAlerts = async () => {
     setLoading(true)
     try {
-      const allAlerts = await alertAPI.getAlerts()
-      // Filter for important alerts (critical and high severity, active status)
+      const response = await fetch("http://localhost:3001/api/alerts", {
+        headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
+      })
+      const allAlerts = await response.json()
       const importantAlerts = allAlerts
-        .filter((alert) => alert.status === "active" && (alert.severity === "critical" || alert.severity === "high"))
-        .slice(0, 5) // Show only top 5 most important
+        .filter((alert: Alert) => alert.status === "active" && (alert.severity === "critical" || alert.severity === "high"))
+        .slice(0, 5)
       setAlerts(importantAlerts)
     } catch (error) {
       console.error("Failed to load alerts:", error)
@@ -43,7 +56,6 @@ export function DashboardAlerts({ onViewAll }: DashboardAlertsProps) {
   const getAlertIcon = (type: Alert["type"]) => {
     const iconMap = {
       weather: <Cloud className="h-4 w-4" />,
-      maintenance: <Wrench className="h-4 w-4" />,
       security: <Shield className="h-4 w-4" />,
       delay: <Clock className="h-4 w-4" />,
       accident: <AlertTriangle className="h-4 w-4" />,
@@ -67,6 +79,17 @@ export function DashboardAlerts({ onViewAll }: DashboardAlertsProps) {
       default:
         return "text-gray-500 border-gray-500/30 bg-gray-500/10"
     }
+  }
+
+  const getTimeAgo = (timestamp: string) => {
+    const now = new Date()
+    const diff = now.getTime() - new Date(timestamp).getTime()
+    const minutes = Math.floor(diff / 1000 / 60)
+    if (minutes < 1) return "Just now"
+    if (minutes < 60) return `${minutes} min ago`
+    const hours = Math.floor(minutes / 60)
+    if (hours < 24) return `${hours} hr${hours > 1 ? "s" : ""} ago`
+    return `${Math.floor(hours / 24)} day${hours >= 48 ? "s" : ""} ago`
   }
 
   if (loading) {
