@@ -90,12 +90,19 @@ SessionsSchema.index({ userId: 1, sessionId: 1 });
 
 // Screens Schema
 const ScreensSchema = new Schema({
-  userId: { type: String, required: true },
   sessionId: { type: String, required: true },
+  deviceId: { type: String, required: true },
   screenId: { type: String, required: true },
-  role: { type: String, required: true, enum: ['general', 'detailed'] }
+  left: { type: Number, required: true },
+  top: { type: Number, required: true },
+  width: { type: Number, required: true },
+  height: { type: Number, required: true },
+  role: { type: String, required: true, enum: ['general', 'detailed', 'unassigned'], default: 'unassigned' },
+  createdAt: { type: Date, default: Date.now },
+  updatedAt: { type: Date, default: Date.now }
 }, { collection: 'Screens' });
-ScreensSchema.index({ userId: 1, sessionId: 1 });
+ScreensSchema.index({ sessionId: 1, deviceId: 1 });
+ScreensSchema.index({ sessionId: 1, screenId: 1 });
 
 // WidgetPreferences Schema
 const WidgetPreferencesSchema = new Schema({

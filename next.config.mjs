@@ -1,14 +1,13 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  eslint: {
-    ignoreDuringBuilds: true,
+  // Next.js 15 no longer needs experimental.appDir - it's enabled by default
+  // Disable Next.js dev tools indicator
+  devIndicators: {
+    position: 'bottom-right',
   },
-  typescript: {
-    ignoreBuildErrors: true,
-  },
-  images: {
-    unoptimized: true,
-  },
+  // Optimize for production (swcMinify is enabled by default in Next.js 15)
+  // Reduce context usage by disabling strict mode
+  reactStrictMode: false,
 }
 
 export default nextConfig

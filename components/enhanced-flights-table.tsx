@@ -48,9 +48,10 @@ interface Alert {
 
 interface EnhancedFlightsTableProps {
   statusFilter?: Flight["status"] | "all" | null
+  onPopOutDetails?: (flightId: string) => void
 }
 
-export function EnhancedFlightsTable({ statusFilter }: EnhancedFlightsTableProps) {
+export function EnhancedFlightsTable({ statusFilter, onPopOutDetails }: EnhancedFlightsTableProps) {
   const [flights, setFlights] = useState<Flight[]>([])
   const [alerts, setAlerts] = useState<Alert[]>([])
   const [loading, setLoading] = useState(true)
@@ -321,16 +322,37 @@ export function EnhancedFlightsTable({ statusFilter }: EnhancedFlightsTableProps
                       )}
                     </TableCell>
                     <TableCell>
-                      <TooltipProvider>
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <Button variant="ghost" size="sm" onClick={e => { e.stopPropagation(); setSelectedFlight(flight); }}>
-                              <Eye className="h-4 w-4" />
-                            </Button>
-                          </TooltipTrigger>
-                          <TooltipContent>View flight details</TooltipContent>
-                        </Tooltip>
-                      </TooltipProvider>
+                      <div className="flex gap-1">
+                        <TooltipProvider>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Button variant="ghost" size="sm" onClick={e => { e.stopPropagation(); setSelectedFlight(flight); }}>
+                                <Eye className="h-4 w-4" />
+                              </Button>
+                            </TooltipTrigger>
+                            <TooltipContent>View flight details</TooltipContent>
+                          </Tooltip>
+                        </TooltipProvider>
+                        {onPopOutDetails && (
+                          <TooltipProvider>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <Button 
+                                  variant="outline" 
+                                  size="sm" 
+                                  onClick={e => { 
+                                    e.stopPropagation(); 
+                                    onPopOutDetails(flight.id); 
+                                  }}
+                                >
+                                  <Eye className="h-4 w-4" />
+                                </Button>
+                              </TooltipTrigger>
+                              <TooltipContent>Pop out to detailed screen</TooltipContent>
+                            </Tooltip>
+                          </TooltipProvider>
+                        )}
+                      </div>
                     </TableCell>
                   </TableRow>
                 )

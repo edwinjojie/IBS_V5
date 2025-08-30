@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation"
 import { Card } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
-import { LayoutDashboard, Plane, CloudSun, Bell, LifeBuoy, Settings, Search, RefreshCw, Filter, Download, ChevronDown, Info, X } from "lucide-react"
+import { LayoutDashboard, Plane, CloudSun, Bell, LifeBuoy, Settings, Search, RefreshCw, Filter, Download, ChevronDown, Info, X, BarChart3, TrendingUp } from "lucide-react"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { ThemeToggle } from "@/components/theme-toggle"
@@ -14,6 +14,8 @@ import { EnhancedAlertsPanel } from "@/components/enhanced-alerts-panel"
 import { OperationsChart } from "@/components/operations-chart"
 import { DashboardAlerts } from "@/components/dashboard-alerts"
 import { MetricsCard } from "@/components/metrics-card"
+import { RoleAssignmentModal } from "@/components/role-assignment-modal"
+import { useMultiScreen } from "@/hooks/use-multi-screen"
 
 export default function DashboardPage() {
   const [activeTab, setActiveTab] = useState('dashboard');
@@ -26,7 +28,18 @@ export default function DashboardPage() {
   const [showSearchDropdown, setShowSearchDropdown] = useState(false)
   const [expandedMetric, setExpandedMetric] = useState<string | null>(null)
   const [flightStatusFilter, setFlightStatusFilter] = useState<"On Time" | "Delayed" | "Boarding" | "Departed" | "Cancelled" | "all" | null>(null)
+  const [showRoleAssignment, setShowRoleAssignment] = useState(false)
   const router = useRouter()
+
+  // Multi-screen functionality
+  const {
+    screens,
+    currentRole,
+    initializeMultiScreen,
+    assignRole,
+    popOutDetailedView,
+    isMultiScreenSupported
+  } = useMultiScreen()
 
   // Auth check
   useEffect(() => {
@@ -65,6 +78,20 @@ export default function DashboardPage() {
   useEffect(() => {
     loadMetrics()
   }, [])
+
+  // Initialize multi-screen functionality
+  useEffect(() => {
+    const initMultiScreen = async () => {
+      if (isMultiScreenSupported()) {
+        const result = await initializeMultiScreen()
+        if (result?.needsRoleAssignment) {
+          setShowRoleAssignment(true)
+        }
+      }
+    }
+
+    initMultiScreen()
+  }, [initializeMultiScreen, isMultiScreenSupported])
 
   // Reset flightStatusFilter only when leaving the flights tab
   useEffect(() => {
@@ -109,6 +136,14 @@ export default function DashboardPage() {
     } finally {
       setIsRefreshing(false)
     }
+  }
+
+  const handleRoleAssign = async (screenId: number, role: 'general' | 'detailed') => {
+    await assignRole(screenId, role)
+  }
+
+  const handlePopOutDetails = (type: 'flight' | 'alerts' | 'metrics' | 'operations', id?: string) => {
+    popOutDetailedView(type, id)
   }
 
   const navigationItems = [
@@ -327,7 +362,10 @@ export default function DashboardPage() {
                           <span className="font-semibold">Flights Today Details</span>
                           <Button variant="ghost" size="icon" onClick={() => setExpandedMetric(null)} aria-label="Close details"><X className="h-4 w-4" /></Button>
                         </div>
-                        <EnhancedFlightsTable statusFilter={null} />
+                        <EnhancedFlightsTable 
+                          statusFilter={null} 
+                          onPopOutDetails={(flightId) => handlePopOutDetails('flight', flightId)}
+                        />
                       </div>
                     )}
                   </div>
@@ -374,6 +412,38 @@ export default function DashboardPage() {
                   </div>
                 </div>
               )}
+              
+              {/* Pop-out buttons for detailed views */}
+              <div className="flex flex-wrap gap-3 mb-6">
+                <Button 
+                  onClick={() => handlePopOutDetails('metrics')}
+                  variant="outline" 
+                  size="sm"
+                  className="flex items-center gap-2"
+                >
+                  <BarChart3 className="h-4 w-4" />
+                  Pop Out Metrics Dashboard
+                </Button>
+                <Button 
+                  onClick={() => handlePopOutDetails('operations')}
+                  variant="outline" 
+                  size="sm"
+                  className="flex items-center gap-2"
+                >
+                  <TrendingUp className="h-4 w-4" />
+                  Pop Out Operations View
+                </Button>
+                <Button 
+                  onClick={() => handlePopOutDetails('alerts')}
+                  variant="outline" 
+                  size="sm"
+                  className="flex items-center gap-2"
+                >
+                  <Bell className="h-4 w-4" />
+                  Pop Out Alerts Dashboard
+                </Button>
+              </div>
+              
               {/* Chart and Critical Alerts Side by Side */}
               <div className="flex flex-row gap-4 mb-6 items-stretch" style={{ minHeight: 420 }}>
                 {/* On-Time Performance Card */}
@@ -456,7 +526,10 @@ export default function DashboardPage() {
                   </Button>
                 </div>
                 {/* Always show all flights in dashboard */}
-                <EnhancedFlightsTable statusFilter={null} />
+                <EnhancedFlightsTable 
+                  statusFilter={null} 
+                  onPopOutDetails={(flightId) => handlePopOutDetails('flight', flightId)}
+                />
               </div>
             </>
           )}
@@ -476,7 +549,10 @@ export default function DashboardPage() {
                 <p className="text-sm text-muted-foreground">Real-time flight tracking and management</p>
               </div>
               {/* Use the filter in the flights tab */}
-              <EnhancedFlightsTable statusFilter={flightStatusFilter} />
+              <EnhancedFlightsTable 
+                statusFilter={flightStatusFilter} 
+                onPopOutDetails={(flightId) => handlePopOutDetails('flight', flightId)}
+              />
             </div>
           )}
           {(activeTab === "weather" || activeTab === "support" || activeTab === "settings") && (
@@ -490,6 +566,14 @@ export default function DashboardPage() {
           )}
         </main>
       </div>
+
+      {/* Role Assignment Modal */}
+      <RoleAssignmentModal
+        isOpen={showRoleAssignment}
+        onClose={() => setShowRoleAssignment(false)}
+        screens={screens}
+        onRoleAssign={handleRoleAssign}
+      />
     </div>
   )
 }

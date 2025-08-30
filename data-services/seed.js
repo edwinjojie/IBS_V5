@@ -226,21 +226,33 @@ const seedData = async () => {
     // Seed Screens
     await Screens.insertMany([
       {
-        userId: "u1",
         sessionId: "s1",
-        screenId: "screen1",
+        deviceId: "device1",
+        screenId: "0",
+        left: 0,
+        top: 0,
+        width: 1920,
+        height: 1080,
         role: "general"
       },
       {
-        userId: "u1",
         sessionId: "s1",
-        screenId: "screen2",
+        deviceId: "device1",
+        screenId: "1",
+        left: 1920,
+        top: 0,
+        width: 1920,
+        height: 1080,
         role: "detailed"
       },
       {
-        userId: "u2",
         sessionId: "s2",
-        screenId: "screen3",
+        deviceId: "device2",
+        screenId: "0",
+        left: 0,
+        top: 0,
+        width: 1920,
+        height: 1080,
         role: "general"
       }
     ]);
