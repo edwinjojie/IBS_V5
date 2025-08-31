@@ -131,11 +131,53 @@ export function useMultiScreen() {
     }
   }, [stableSessionId, stableDeviceId])
 
+  // Store screen information in backend
+  const storeScreenInfo = useCallback(async (screen: Screen) => {
+    try {
+      const token = localStorage.getItem('token')
+      if (!token) {
+        throw new Error('No authentication token')
+      }
+
+      const response = await fetch('http://localhost:3001/api/screens/link', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          sessionId: stableSessionId,
+          deviceId: stableDeviceId,
+          screenId: screen.id.toString(),
+          left: screen.left,
+          top: screen.top,
+          width: screen.width,
+          height: screen.height,
+          role: 'unassigned' // Will be assigned later
+        })
+      })
+
+      if (!response.ok) {
+        throw new Error('Failed to store screen information')
+      }
+
+      return true
+    } catch (error) {
+      console.error('Failed to store screen info:', error)
+      return false
+    }
+  }, [stableSessionId, stableDeviceId])
+
   // Initialize multi-screen setup
   const initializeMultiScreen = useCallback(async () => {
     if (isInitialized) return
 
     const detectedScreens = await detectScreens()
+    
+    // Store all detected screens in backend
+    for (const screen of detectedScreens) {
+      await storeScreenInfo(screen)
+    }
     
     if (detectedScreens.length > 1) {
       // Multiple screens detected - need role assignment
@@ -147,20 +189,55 @@ export function useMultiScreen() {
       setIsInitialized(true)
       return { needsRoleAssignment: false, screens: detectedScreens }
     }
-  }, [detectScreens, assignRole, isInitialized])
+  }, [detectScreens, assignRole, isInitialized, storeScreenInfo])
+
+  // Get screen roles from backend
+  const getScreenRoles = useCallback(async (): Promise<ScreenRole[]> => {
+    try {
+      const token = localStorage.getItem('token')
+      if (!token) {
+        throw new Error('No authentication token')
+      }
+
+      const response = await fetch(`http://localhost:3001/api/screens/device/${stableDeviceId}/session/${stableSessionId}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      })
+
+      if (!response.ok) {
+        throw new Error('Failed to fetch screen roles')
+      }
+
+      const screenRoles = await response.json()
+      return screenRoles
+    } catch (error) {
+      console.error('Failed to fetch screen roles:', error)
+      return []
+    }
+  }, [stableDeviceId, stableSessionId])
 
   // Pop out detailed view to appropriate screen
   const popOutDetailedView = useCallback(async (type: 'flight' | 'alerts' | 'metrics' | 'operations', id?: string) => {
     try {
-      // Find the detailed screen
-      const detailedScreen = screens.find(screen => {
-        // This would ideally come from the backend based on stored roles
-        // For now, we'll use the second screen if available
-        return screen.id === 1
-      })
-
-      if (!detailedScreen) {
+      // Get screen roles from backend to find the detailed screen
+      const screenRoles = await getScreenRoles()
+      
+      // Find the screen assigned the 'detailed' role
+      const detailedScreenRole = screenRoles.find(role => role.role === 'detailed')
+      
+      if (!detailedScreenRole) {
         // No detailed screen available, open in current window
+        const url = type === 'flight' ? `/detailed/${id}` : `/detailed/${type}`
+        window.open(url, '_blank')
+        return
+      }
+
+      // Find the corresponding screen coordinates from our local screens state
+      const detailedScreen = screens.find(screen => screen.id === detailedScreenRole.screenId)
+      
+      if (!detailedScreen) {
+        // Fallback to regular window open if screen coordinates not found
         const url = type === 'flight' ? `/detailed/${id}` : `/detailed/${type}`
         window.open(url, '_blank')
         return
@@ -192,7 +269,7 @@ export function useMultiScreen() {
           return
       }
 
-      // Open window on the detailed screen
+      // Open window on the detailed screen with proper positioning
       const { left, top, width, height } = detailedScreen
       const newWindow = window.open(
         url,
@@ -217,7 +294,7 @@ export function useMultiScreen() {
       const url = type === 'flight' ? `/detailed/${id}` : `/detailed/${type}`
       window.open(url, '_blank')
     }
-  }, [screens])
+  }, [screens, getScreenRoles])
 
   // Get current screen role
   const getCurrentScreenRole = useCallback(() => {

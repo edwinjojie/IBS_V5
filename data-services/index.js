@@ -176,5 +176,96 @@ app.get('/api/historical-metrics', async (req, res) => {
   }
 });
 
+// --- SCREEN MANAGEMENT ENDPOINTS ---
+
+// Link device to session and store screen coordinates: POST /api/screens/link
+app.post('/api/screens/link', async (req, res) => {
+  try {
+    const { sessionId, deviceId, screenId, left, top, width, height, role } = req.body;
+    
+    // Check if screen already exists for this device and session
+    const existingScreen = await Screens.findOne({ 
+      sessionId, 
+      deviceId, 
+      screenId 
+    });
+
+    if (existingScreen) {
+      // Update existing screen
+      existingScreen.left = left;
+      existingScreen.top = top;
+      existingScreen.width = width;
+      existingScreen.height = height;
+      existingScreen.role = role || existingScreen.role;
+      existingScreen.updatedAt = new Date();
+      await existingScreen.save();
+    } else {
+      // Create new screen
+      const newScreen = new Screens({
+        sessionId,
+        deviceId,
+        screenId,
+        left,
+        top,
+        width,
+        height,
+        role: role || 'unassigned'
+      });
+      await newScreen.save();
+    }
+
+    res.json({ success: true, message: 'Screen linked successfully' });
+  } catch (err) {
+    console.error('Screen link error:', err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Assign role to a specific screen: POST /api/screens/role
+app.post('/api/screens/role', async (req, res) => {
+  try {
+    const { sessionId, deviceId, screenId, role } = req.body;
+    
+    if (!['general', 'detailed', 'unassigned'].includes(role)) {
+      return res.status(400).json({ error: 'Invalid role. Must be general, detailed, or unassigned' });
+    }
+
+    const screen = await Screens.findOneAndUpdate(
+      { sessionId, deviceId, screenId },
+      { role, updatedAt: new Date() },
+      { new: true, upsert: true }
+    );
+
+    res.json({ success: true, message: 'Role assigned successfully', screen });
+  } catch (err) {
+    console.error('Role assignment error:', err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Get all screens for a specific session: GET /api/screens/session/:sessionId
+app.get('/api/screens/session/:sessionId', async (req, res) => {
+  try {
+    const { sessionId } = req.params;
+    const screens = await Screens.find({ sessionId }).sort({ screenId: 1 });
+    res.json(screens);
+  } catch (err) {
+    console.error('Get screens error:', err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Get screen information for a specific device and session: GET /api/screens/device/:deviceId/session/:sessionId
+app.get('/api/screens/device/:deviceId/session/:sessionId', async (req, res) => {
+  try {
+    const { deviceId, sessionId } = req.params;
+    const screens = await Screens.find({ deviceId, sessionId }).sort({ screenId: 1 });
+    res.json(screens);
+  } catch (err) {
+    console.error('Get device screens error:', err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
 const PORT = process.env.PORT || 3001;
 app.listen(PORT, () => console.log(`Backend running on port ${PORT}`));

@@ -40,13 +40,19 @@ export function DetailedMetricsView() {
 
   const loadMetrics = async () => {
     try {
+      setLoading(true)
       const response = await fetch("http://localhost:3001/api/metrics")
       if (response.ok) {
         const data = await response.json()
+        console.log("Loaded metrics data:", data) // Debug log
         setMetrics(data)
+      } else {
+        console.error("Failed to load metrics:", response.status, response.statusText)
+        setMetrics({})
       }
     } catch (error) {
       console.error("Failed to load metrics:", error)
+      setMetrics({})
     } finally {
       setLoading(false)
     }
@@ -65,6 +71,7 @@ export function DetailedMetricsView() {
   }
 
   const getMetricIcon = (metricName: string) => {
+    if (!metricName || typeof metricName !== 'string') return '📊'
     const name = metricName.toLowerCase()
     if (name.includes('delay')) return '⏰'
     if (name.includes('satisfaction')) return '😊'
@@ -76,11 +83,13 @@ export function DetailedMetricsView() {
   }
 
   const getMetricColor = (metric: Metric) => {
+    if (!metric || typeof metric.isPositive !== 'boolean') return "text-gray-600"
     if (metric.isPositive) return "text-green-600"
     return "text-red-600"
   }
 
   const getChangeIcon = (metric: Metric) => {
+    if (!metric || typeof metric.isPositive !== 'boolean') return <TrendingUp className="h-4 w-4" />
     if (metric.isPositive) return <TrendingUp className="h-4 w-4" />
     return <TrendingDown className="h-4 w-4" />
   }
@@ -115,8 +124,17 @@ export function DetailedMetricsView() {
       </div>
 
       {/* Metrics Overview Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {Object.entries(metrics).map(([key, metric]) => (
+      {Object.keys(metrics).length === 0 ? (
+        <div className="col-span-full text-center py-12">
+          <div className="text-gray-500 dark:text-gray-400">
+            <BarChart3 className="h-12 w-12 mx-auto mb-4 opacity-50" />
+            <p className="text-lg font-medium">No metrics available</p>
+            <p className="text-sm">Metrics data could not be loaded or is empty.</p>
+          </div>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {Object.entries(metrics).map(([key, metric]) => (
           <Card 
             key={key} 
             className={`hover:shadow-lg transition-all cursor-pointer ${
@@ -127,27 +145,27 @@ export function DetailedMetricsView() {
             <CardHeader className="pb-3">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                  <span className="text-2xl">{getMetricIcon(metric.kpi_name)}</span>
+                  <span className="text-2xl">{getMetricIcon(key)}</span>
                   <CardTitle className="text-lg capitalize">
-                    {metric.kpi_name.replace(/_/g, ' ')}
+                    {key.replace(/_/g, ' ')}
                   </CardTitle>
                 </div>
                 <Badge variant="outline" className="text-xs">
-                  {metric.unit}
+                  {metric.unit || 'N/A'}
                 </Badge>
               </div>
             </CardHeader>
             <CardContent className="space-y-3">
               <div className="text-3xl font-bold text-gray-900 dark:text-white">
-                {metric.value.toLocaleString()}
-                <span className="text-lg text-gray-500 ml-1">{metric.unit}</span>
+                {metric.value?.toLocaleString() || 'N/A'}
+                <span className="text-lg text-gray-500 ml-1">{metric.unit || 'N/A'}</span>
               </div>
               
               <div className="flex items-center gap-2">
                 <div className={`flex items-center gap-1 ${getMetricColor(metric)}`}>
                   {getChangeIcon(metric)}
                   <span className="text-sm font-medium">
-                    {metric.change > 0 ? '+' : ''}{metric.change.toFixed(1)}%
+                    {metric.change > 0 ? '+' : ''}{metric.change?.toFixed(1) || '0.0'}%
                   </span>
                 </div>
                 <span className="text-sm text-gray-500">
@@ -164,7 +182,7 @@ export function DetailedMetricsView() {
 
               <div className="flex items-center gap-2 text-sm text-gray-500">
                 <Clock className="h-4 w-4" />
-                <span>Updated: {new Date(metric.lastUpdated).toLocaleString()}</span>
+                <span>Updated: {metric.lastUpdated ? new Date(metric.lastUpdated).toLocaleString() : 'N/A'}</span>
               </div>
 
               {/* Progress bar to target */}
@@ -187,7 +205,8 @@ export function DetailedMetricsView() {
             </CardContent>
           </Card>
         ))}
-      </div>
+        </div>
+      )}
 
       {/* Detailed View for Selected Metric */}
       {selectedMetric && metrics[selectedMetric] && (
@@ -195,7 +214,7 @@ export function DetailedMetricsView() {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <BarChart3 className="h-6 w-6" />
-              Detailed Analysis: {metrics[selectedMetric].kpi_name.replace(/_/g, ' ')}
+              Detailed Analysis: {selectedMetric.replace(/_/g, ' ')}
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-6">
@@ -203,20 +222,20 @@ export function DetailedMetricsView() {
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div className="text-center p-4 bg-gray-50 dark:bg-gray-800 rounded-lg">
                 <div className="text-2xl font-bold text-gray-900 dark:text-white">
-                  {metrics[selectedMetric].value.toLocaleString()}
+                  {metrics[selectedMetric]?.value?.toLocaleString() || 'N/A'}
                 </div>
                 <div className="text-sm text-gray-500">Current Value</div>
               </div>
               <div className="text-center p-4 bg-gray-50 dark:bg-gray-800 rounded-lg">
                 <div className={`text-2xl font-bold ${getMetricColor(metrics[selectedMetric])}`}>
-                  {metrics[selectedMetric].change > 0 ? '+' : ''}{metrics[selectedMetric].change.toFixed(1)}%
+                  {metrics[selectedMetric]?.change > 0 ? '+' : ''}{metrics[selectedMetric]?.change?.toFixed(1) || '0.0'}%
                 </div>
                 <div className="text-sm text-gray-500">Change</div>
               </div>
               {metrics[selectedMetric].target && (
                 <div className="text-center p-4 bg-gray-50 dark:bg-gray-800 rounded-lg">
                   <div className="text-2xl font-bold text-gray-900 dark:text-white">
-                    {metrics[selectedMetric].target.toLocaleString()}
+                    {metrics[selectedMetric]?.target?.toLocaleString() || 'N/A'}
                   </div>
                   <div className="text-sm text-gray-500">Target</div>
                 </div>
@@ -226,9 +245,17 @@ export function DetailedMetricsView() {
             {/* Historical Chart */}
             <div className="space-y-4">
               <h3 className="text-lg font-semibold">Historical Trend</h3>
-              <div className="h-64">
-                <ResponsiveContainer width="100%" height="100%">
-                  <LineChart data={historicalMetrics}>
+              {historicalMetrics.length === 0 ? (
+                <div className="h-64 flex items-center justify-center text-gray-500 dark:text-gray-400">
+                  <div className="text-center">
+                    <BarChart3 className="h-12 w-12 mx-auto mb-2 opacity-50" />
+                    <p>No historical data available</p>
+                  </div>
+                </div>
+              ) : (
+                <div className="h-64">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <LineChart data={historicalMetrics}>
                     <CartesianGrid strokeDasharray="3 3" />
                     <XAxis 
                       dataKey="time" 
@@ -246,7 +273,7 @@ export function DetailedMetricsView() {
                       strokeWidth={2}
                       dot={{ fill: '#3b82f6', strokeWidth: 2, r: 4 }}
                     />
-                    {metrics[selectedMetric].target && (
+                    {metrics[selectedMetric]?.target && (
                       <Line 
                         type="monotone" 
                         dataKey="target" 
@@ -259,6 +286,7 @@ export function DetailedMetricsView() {
                   </LineChart>
                 </ResponsiveContainer>
               </div>
+              )}
             </div>
 
             {/* Insights */}
@@ -271,7 +299,7 @@ export function DetailedMetricsView() {
                     <span className="font-medium text-blue-900 dark:text-blue-100">Current Status</span>
                   </div>
                   <p className="text-sm text-blue-800 dark:text-blue-200">
-                    {metrics[selectedMetric].isPositive 
+                    {metrics[selectedMetric]?.isPositive 
                       ? 'Performance is trending positively' 
                       : 'Performance needs attention'
                     }
@@ -283,7 +311,7 @@ export function DetailedMetricsView() {
                     <span className="font-medium text-green-900 dark:text-green-100">Recommendations</span>
                   </div>
                   <p className="text-sm text-green-800 dark:text-green-200">
-                    {metrics[selectedMetric].isPositive 
+                    {metrics[selectedMetric]?.isPositive 
                       ? 'Maintain current performance levels' 
                       : 'Review processes and identify improvement areas'
                     }
@@ -304,19 +332,19 @@ export function DetailedMetricsView() {
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4 text-center">
             <div>
               <div className="text-2xl font-bold text-green-600">
-                {Object.values(metrics).filter(m => m.isPositive).length}
+                {Object.values(metrics).filter(m => m && m.isPositive).length}
               </div>
               <div className="text-sm text-gray-500">Improving</div>
             </div>
             <div>
               <div className="text-2xl font-bold text-red-600">
-                {Object.values(metrics).filter(m => !m.isPositive).length}
+                {Object.values(metrics).filter(m => m && !m.isPositive).length}
               </div>
               <div className="text-sm text-gray-500">Declining</div>
             </div>
             <div>
               <div className="text-2xl font-bold text-blue-600">
-                {Object.values(metrics).filter(m => m.target && m.value >= m.target).length}
+                {Object.values(metrics).filter(m => m && m.target && m.value >= m.target).length}
               </div>
               <div className="text-sm text-gray-500">On Target</div>
             </div>

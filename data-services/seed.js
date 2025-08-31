@@ -150,6 +150,8 @@ const seedData = async () => {
         change: 12,
         percentage: 5.1,
         isPositive: true,
+        unit: "flights",
+        target: 250,
         lastUpdated: new Date("2025-08-05T18:30:00Z")
       },
       {
@@ -158,6 +160,7 @@ const seedData = async () => {
         change: -3,
         percentage: -14.3,
         isPositive: true,
+        unit: "flights",
         lastUpdated: new Date("2025-08-05T18:30:00Z")
       },
       {
@@ -166,6 +169,8 @@ const seedData = async () => {
         change: 2.1,
         percentage: 2.3,
         isPositive: true,
+        unit: "%",
+        target: 95.0,
         lastUpdated: new Date("2025-08-05T18:30:00Z")
       },
       {
@@ -174,16 +179,39 @@ const seedData = async () => {
         change: 1,
         percentage: 25,
         isPositive: false,
+        unit: "flights",
+        lastUpdated: new Date("2025-08-05T18:30:00Z")
+      },
+      {
+        kpi_name: "passengerSatisfaction",
+        value: 4.2,
+        change: 0.3,
+        percentage: 7.7,
+        isPositive: true,
+        unit: "rating",
+        target: 4.5,
+        lastUpdated: new Date("2025-08-05T18:30:00Z")
+      },
+      {
+        kpi_name: "fuelEfficiency",
+        value: 87.5,
+        change: -2.1,
+        percentage: -2.3,
+        isPositive: false,
+        unit: "%",
         lastUpdated: new Date("2025-08-05T18:30:00Z")
       }
     ]);
 
     // Seed HistoricalMetrics
     await HistoricalMetrics.insertMany([
-      { time: "2025-08-05T06:00:00Z", onTime: 95, flights: 12, delays: 1 },
-      { time: "2025-08-05T08:00:00Z", onTime: 88, flights: 24, delays: 3 },
-      { time: "2025-08-05T10:00:00Z", onTime: 90, flights: 30, delays: 2 },
-      { time: "2025-08-05T12:00:00Z", onTime: 85, flights: 28, delays: 4 }
+      { time: "2025-08-05T06:00:00Z", value: 95, target: 95 },
+      { time: "2025-08-05T08:00:00Z", value: 88, target: 95 },
+      { time: "2025-08-05T10:00:00Z", value: 90, target: 95 },
+      { time: "2025-08-05T12:00:00Z", value: 85, target: 95 },
+      { time: "2025-08-05T14:00:00Z", value: 92, target: 95 },
+      { time: "2025-08-05T16:00:00Z", value: 89, target: 95 },
+      { time: "2025-08-05T18:00:00Z", value: 92.7, target: 95 }
     ]);
 
     // Seed Users

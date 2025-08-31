@@ -62,9 +62,8 @@ MetricsSchema.index({ kpi_name: 1, lastUpdated: 1 });
 // HistoricalMetrics Schema
 const HistoricalMetricsSchema = new Schema({
   time: { type: String, required: true },
-  onTime: { type: Number, required: true },
-  flights: { type: Number, required: true },
-  delays: { type: Number, required: true }
+  value: { type: Number, required: true },
+  target: { type: Number }
 }, { collection: 'HistoricalMetrics' });
 HistoricalMetricsSchema.index({ time: 1 });
 
