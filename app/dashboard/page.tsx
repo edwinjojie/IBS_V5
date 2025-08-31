@@ -16,6 +16,7 @@ import { DashboardAlerts } from "@/components/dashboard-alerts"
 import { MetricsCard } from "@/components/metrics-card"
 import { RoleAssignmentModal } from "@/components/role-assignment-modal"
 import { useMultiScreen } from "@/hooks/use-multi-screen"
+import { MultiScreenDebug } from "@/components/multi-screen-debug"
 
 export default function DashboardPage() {
   const [activeTab, setActiveTab] = useState('dashboard');
@@ -29,6 +30,7 @@ export default function DashboardPage() {
   const [expandedMetric, setExpandedMetric] = useState<string | null>(null)
   const [flightStatusFilter, setFlightStatusFilter] = useState<"On Time" | "Delayed" | "Boarding" | "Departed" | "Cancelled" | "all" | null>(null)
   const [showRoleAssignment, setShowRoleAssignment] = useState(false)
+  const [showDebugPanel, setShowDebugPanel] = useState(false)
   const router = useRouter()
 
   // Multi-screen functionality
@@ -92,6 +94,20 @@ export default function DashboardPage() {
 
     initMultiScreen()
   }, [initializeMultiScreen, isMultiScreenSupported])
+
+  // Listen for role assignment requests from multi-screen hook
+  useEffect(() => {
+    const handleShowRoleAssignment = (event: CustomEvent) => {
+      console.log('Role assignment requested:', event.detail)
+      setShowRoleAssignment(true)
+    }
+
+    window.addEventListener('showRoleAssignment', handleShowRoleAssignment as EventListener)
+    
+    return () => {
+      window.removeEventListener('showRoleAssignment', handleShowRoleAssignment as EventListener)
+    }
+  }, [])
 
   // Reset flightStatusFilter only when leaving the flights tab
   useEffect(() => {
@@ -566,6 +582,32 @@ export default function DashboardPage() {
           )}
         </main>
       </div>
+
+      {/* Debug Panel Toggle */}
+      <div className="fixed bottom-4 right-4 z-50">
+        <Button
+          onClick={() => setShowDebugPanel(!showDebugPanel)}
+          variant="outline"
+          size="sm"
+          className="bg-background/80 backdrop-blur-sm"
+        >
+          🔧 Debug
+        </Button>
+      </div>
+
+      {/* Debug Panel */}
+      {showDebugPanel && (
+        <div className="fixed inset-0 z-40 bg-black/50 flex items-center justify-center p-4">
+          <div className="w-full max-w-6xl max-h-[90vh] overflow-y-auto">
+            <MultiScreenDebug />
+            <div className="mt-4 text-center">
+              <Button onClick={() => setShowDebugPanel(false)} variant="outline">
+                Close Debug Panel
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Role Assignment Modal */}
       <RoleAssignmentModal

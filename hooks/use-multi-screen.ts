@@ -64,10 +64,44 @@ export function useMultiScreen() {
           width: screen.width,
           height: screen.height
         }))
+        
+        console.log('Detected screens using getScreenDetails:', detectedScreens)
         setScreens(detectedScreens)
         return detectedScreens
       } else {
         // Fallback for browsers without getScreenDetails
+        console.warn('getScreenDetails not supported, using fallback detection')
+        
+        // Try to detect multiple screens using other methods
+        if (window.screen && window.screen.availWidth) {
+          const totalWidth = window.screen.availWidth
+          const totalHeight = window.screen.availHeight
+          
+          // If total width is significantly larger than individual screen width, assume multiple screens
+          if (totalWidth > window.innerWidth * 1.5) {
+            const fallbackScreens = [
+              {
+                id: 0,
+                left: 0,
+                top: 0,
+                width: window.innerWidth,
+                height: window.innerHeight
+              },
+              {
+                id: 1,
+                left: window.innerWidth,
+                top: 0,
+                width: window.innerWidth,
+                height: window.innerHeight
+              }
+            ]
+            console.log('Detected multiple screens using fallback method:', fallbackScreens)
+            setScreens(fallbackScreens)
+            return fallbackScreens
+          }
+        }
+        
+        // Single screen fallback
         const fallbackScreens = [{
           id: 0,
           left: 0,
@@ -75,6 +109,7 @@ export function useMultiScreen() {
           width: window.screen.width,
           height: window.screen.height
         }]
+        console.log('Using single screen fallback:', fallbackScreens)
         setScreens(fallbackScreens)
         return fallbackScreens
       }
@@ -150,6 +185,8 @@ export function useMultiScreen() {
           deviceId: stableDeviceId,
           screenId: screen.id.toString(),
           left: screen.left,
+          
+
           top: screen.top,
           width: screen.width,
           height: screen.height,
@@ -220,24 +257,43 @@ export function useMultiScreen() {
   // Pop out detailed view to appropriate screen
   const popOutDetailedView = useCallback(async (type: 'flight' | 'alerts' | 'metrics' | 'operations', id?: string) => {
     try {
-      // Get screen roles from backend to find the detailed screen
+      // Check if we have multiple screens first
+      if (screens.length <= 1) {
+        // Single screen detected - open detailed view in new tab
+        const url = type === 'flight' ? `/detailed/${id}` : `/detailed/${type}`
+        console.log('Single screen detected - opening detailed view in new tab:', url)
+        window.open(url, '_blank')  // Open in new tab for single screen
+        return
+      }
+
+      // Multiple screens detected - get screen roles
       const screenRoles = await getScreenRoles()
       
       // Find the screen assigned the 'detailed' role
       const detailedScreenRole = screenRoles.find(role => role.role === 'detailed')
       
       if (!detailedScreenRole) {
-        // No detailed screen available, open in current window
-        const url = type === 'flight' ? `/detailed/${id}` : `/detailed/${type}`
-        window.open(url, '_blank')
+        // Multiple screens but no detailed role assigned - prompt user to assign roles
+        console.log('Multiple screens detected but no detailed role assigned')
+        // Trigger role assignment modal by dispatching a custom event
+        const event = new CustomEvent('showRoleAssignment', {
+          detail: { screens, message: 'Please assign screen roles to use detailed views' }
+        })
+        window.dispatchEvent(event)
         return
       }
 
       // Find the corresponding screen coordinates from our local screens state
       const detailedScreen = screens.find(screen => screen.id === detailedScreenRole.screenId)
       
+      console.log('Screen roles:', screenRoles)
+      console.log('Detailed screen role:', detailedScreenRole)
+      console.log('All screens:', screens)
+      console.log('Found detailed screen:', detailedScreen)
+      
       if (!detailedScreen) {
         // Fallback to regular window open if screen coordinates not found
+        console.warn('Detailed screen coordinates not found, falling back to new tab')
         const url = type === 'flight' ? `/detailed/${id}` : `/detailed/${type}`
         window.open(url, '_blank')
         return
@@ -269,29 +325,125 @@ export function useMultiScreen() {
           return
       }
 
-      // Open window on the detailed screen with proper positioning
+      // Calculate window dimensions and position
       const { left, top, width, height } = detailedScreen
-      const newWindow = window.open(
-        url,
-        windowName,
-        `left=${left + 50},top=${top + 50},width=${Math.min(width - 100, 1400)},height=${Math.min(height - 100, 900)}`
-      )
+      const windowWidth = Math.min(width - 100, 1400)
+      const windowHeight = Math.min(height - 100, 900)
+      const windowLeft = left + 50
+      const windowTop = top + 50
+      
+      console.log('Window positioning details:')
+      console.log('  Screen coordinates:', { left, top, width, height })
+      console.log('  Window dimensions:', { windowWidth, windowHeight })
+      console.log('  Window position:', { windowLeft, windowTop })
+      console.log('  Current window position:', { left: window.screenX, top: window.screenY })
 
-      if (newWindow) {
-        // Send data to the new window
-        newWindow.addEventListener('load', () => {
-          newWindow.postMessage({ 
-            type: 'DETAILED_VIEW_DATA', 
-            viewType: type, 
-            id,
-            timestamp: Date.now()
-          }, '*')
-        })
+      // Try multiple approaches to open window on correct screen
+      let newWindow: Window | null = null
+
+      // Method 1: Try with explicit positioning
+      try {
+        newWindow = window.open(
+          url,
+          windowName,
+          `left=${windowLeft},top=${windowTop},width=${windowWidth},height=${windowHeight},scrollbars=yes,resizable=yes,status=yes,toolbar=no,menubar=no,location=no`
+        )
+        
+        if (newWindow && !newWindow.closed) {
+          // Verify the window opened successfully
+          console.log('Window opened with positioning:', { left: windowLeft, top: windowTop, width: windowWidth, height: windowHeight })
+        }
+      } catch (error) {
+        console.warn('Failed to open window with positioning:', error)
       }
+
+      // Method 2: If Method 1 failed, try without positioning but with screen-specific features
+      if (!newWindow || newWindow.closed) {
+        try {
+          // Open window without positioning first
+          newWindow = window.open(url, windowName, 'scrollbars=yes,resizable=yes,status=yes,toolbar=no,menubar=no,location=no')
+          
+          if (newWindow && !newWindow.closed) {
+            // Try to move the window to the correct screen after it opens
+            setTimeout(() => {
+              try {
+                if (newWindow && !newWindow.closed) {
+                  // Use moveTo and resizeTo if available
+                  if (typeof newWindow.moveTo === 'function' && typeof newWindow.resizeTo === 'function') {
+                    newWindow.moveTo(windowLeft, windowTop)
+                    newWindow.resizeTo(windowWidth, windowHeight)
+                    console.log('Window moved and resized after opening')
+                  }
+                }
+              } catch (moveError) {
+                console.warn('Failed to move window after opening:', moveError)
+              }
+            }, 100)
+          }
+        } catch (error) {
+          console.warn('Failed to open window without positioning:', error)
+        }
+      }
+
+      // Method 3: Final fallback - check screen count
+      if (!newWindow || newWindow.closed) {
+        if (screens.length <= 1) {
+          // Single screen - open new tab as fallback
+          console.warn('Window opening failed, falling back to new tab')
+          newWindow = window.open(url, '_blank')
+        } else {
+          // Multiple screens - try new tab as last resort
+          console.warn('All window opening methods failed, falling back to new tab')
+          newWindow = window.open(url, '_blank')
+        }
+      }
+
+      // If we successfully opened a window, set up communication
+      if (newWindow && !newWindow.closed) {
+        // Send data to the new window
+        const setupWindowCommunication = () => {
+          try {
+            // Send detailed view data
+            newWindow!.postMessage({ 
+              type: 'DETAILED_VIEW_DATA', 
+              viewType: type, 
+              id,
+              timestamp: Date.now()
+            }, '*')
+            
+            // Send current theme to synchronize
+            const currentTheme = localStorage.getItem('vite-ui-theme') || 'system'
+            newWindow!.postMessage({
+              type: 'THEME_CHANGE',
+              theme: currentTheme
+            }, '*')
+
+            console.log('Window communication established successfully')
+          } catch (error) {
+            console.error('Failed to establish window communication:', error)
+          }
+        }
+
+        // Try to set up communication immediately
+        setupWindowCommunication()
+
+        // Also try after a delay to ensure window is fully loaded
+        setTimeout(setupWindowCommunication, 500)
+
+        // Listen for window close to clean up
+        const checkWindowClosed = setInterval(() => {
+          if (newWindow && newWindow.closed) {
+            clearInterval(checkWindowClosed)
+            console.log('Detailed view window closed')
+          }
+        }, 1000)
+      }
+
     } catch (error) {
       console.error('Failed to pop out detailed view:', error)
-      // Fallback to regular window open
+      // Final fallback - always try new tab
       const url = type === 'flight' ? `/detailed/${id}` : `/detailed/${type}`
+      console.log('Error fallback: opening new tab')
       window.open(url, '_blank')
     }
   }, [screens, getScreenRoles])
@@ -306,6 +458,52 @@ export function useMultiScreen() {
     return 'getScreenDetails' in window
   }, [])
 
+  // Test window opening capabilities
+  const testWindowOpening = useCallback(() => {
+    console.log('Testing window opening capabilities...')
+    
+    // Test basic window.open
+    try {
+      const testWindow = window.open('about:blank', 'test', 'width=400,height=300')
+      if (testWindow) {
+        console.log('✅ Basic window.open works')
+        testWindow.close()
+      } else {
+        console.log('❌ Basic window.open failed')
+      }
+    } catch (error) {
+      console.log('❌ Basic window.open error:', error)
+    }
+
+    // Test window positioning
+    try {
+      const positionedWindow = window.open('about:blank', 'test-pos', 'left=100,top=100,width=400,height=300')
+      if (positionedWindow) {
+        console.log('✅ Window positioning works')
+        positionedWindow.close()
+      } else {
+        console.log('❌ Window positioning failed')
+      }
+    } catch (error) {
+      console.log('❌ Window positioning error:', error)
+    }
+
+    // Test window methods
+    try {
+      const methodWindow = window.open('about:blank', 'test-methods', 'width=400,height=300')
+      if (methodWindow) {
+        if (typeof methodWindow.moveTo === 'function' && typeof methodWindow.resizeTo === 'function') {
+          console.log('✅ Window moveTo/resizeTo methods available')
+        } else {
+          console.log('⚠️ Window moveTo/resizeTo methods not available')
+        }
+        methodWindow.close()
+      }
+    } catch (error) {
+      console.log('❌ Window methods test error:', error)
+    }
+  }, [])
+
   // Memoize the return object to prevent unnecessary re-renders
   return useMemo(() => ({
     screens,
@@ -318,7 +516,8 @@ export function useMultiScreen() {
     initializeMultiScreen,
     popOutDetailedView,
     getCurrentScreenRole,
-    isMultiScreenSupported
+    isMultiScreenSupported,
+    testWindowOpening
   }), [
     screens,
     currentRole,
@@ -330,6 +529,7 @@ export function useMultiScreen() {
     initializeMultiScreen,
     popOutDetailedView,
     getCurrentScreenRole,
-    isMultiScreenSupported
+    isMultiScreenSupported,
+    testWindowOpening
   ])
 }

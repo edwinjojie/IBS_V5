@@ -8,6 +8,7 @@ import { Separator } from "@/components/ui/separator"
 import { TrendingUp, TrendingDown, RefreshCw, BarChart3, Clock, Target, Activity } from "lucide-react"
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar } from "recharts"
 import { Skeleton } from "@/components/ui/skeleton"
+import { useThemeSync } from "@/hooks/use-theme-sync"
 
 interface Metric {
   kpi_name: string
@@ -28,6 +29,9 @@ interface HistoricalMetric {
 }
 
 export function DetailedMetricsView() {
+  // Initialize theme synchronization
+  useThemeSync()
+  
   const [metrics, setMetrics] = useState<Record<string, Metric>>({})
   const [historicalMetrics, setHistoricalMetrics] = useState<HistoricalMetric[]>([])
   const [loading, setLoading] = useState(true)
