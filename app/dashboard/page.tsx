@@ -17,6 +17,7 @@ import { MetricsCard } from "@/components/metrics-card"
 import { RoleAssignmentModal } from "@/components/role-assignment-modal"
 import { useMultiScreen } from "@/hooks/use-multi-screen"
 import { MultiScreenDebug } from "@/components/multi-screen-debug"
+import { WeatherDashboard } from "@/components/weather"
 
 export default function DashboardPage() {
   const [activeTab, setActiveTab] = useState('dashboard');
@@ -549,6 +550,12 @@ export default function DashboardPage() {
               </div>
             </>
           )}
+          {activeTab === "weather" && (
+            <Card className="p-8 bg-background/60 backdrop-blur-md border-border/50">
+             <h2 className="text-xl font-bold mb-4 text-center">Weather Overview</h2>
+             <WeatherDashboard />
+            </Card>
+          )}
           {activeTab === "alerts" && (
             <div>
               <div className="mb-4">
@@ -571,7 +578,7 @@ export default function DashboardPage() {
               />
             </div>
           )}
-          {(activeTab === "weather" || activeTab === "support" || activeTab === "settings") && (
+          {( activeTab === "support" || activeTab === "settings") && (
             <Card className="p-8 bg-background/60 backdrop-blur-md border-border/50">
               <div className="text-center">
                 <div className="text-4xl mb-4">🚧</div>
