@@ -1,4 +1,4 @@
-# Multi-Screen Troubleshooting Guide
+wi# Multi-Screen Troubleshooting Guide
 
 ## 🚨 **Problem: Windows Opening as Tabs Instead of New Windows on Secondary Screen**
 
