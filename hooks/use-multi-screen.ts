@@ -52,6 +52,30 @@ export function useMultiScreen() {
     setSessionId(stableSessionId)
   }, [stableDeviceId, stableSessionId])
 
+  // Helper function to get current screen ID
+  const getCurrentScreenId = useCallback(async (): Promise<number> => {
+    try {
+      if ('getScreenDetails' in window) {
+        const screenDetails = await (window as any).getScreenDetails()
+        const currentScreen = screenDetails.currentScreen
+        
+        if (currentScreen) {
+          // Find matching screen by coordinates
+          const matchingScreenIndex = screens.findIndex(screen => 
+            screen.left === currentScreen.left && 
+            screen.top === currentScreen.top &&
+            screen.width === currentScreen.width &&
+            screen.height === currentScreen.height
+          )
+          return matchingScreenIndex >= 0 ? matchingScreenIndex : 0
+        }
+      }
+    } catch (error) {
+      console.warn('Could not determine current screen:', error)
+    }
+    return 0 // Default to first screen
+  }, [screens])
+
   // Detect available screens with memoization
   const detectScreens = useCallback(async (): Promise<Screen[]> => {
     try {
@@ -66,36 +90,54 @@ export function useMultiScreen() {
         }))
         
         console.log('Detected screens using getScreenDetails:', detectedScreens)
+        console.log('Current screen info:', screenDetails.currentScreen)
         setScreens(detectedScreens)
         return detectedScreens
       } else {
         // Fallback for browsers without getScreenDetails
         console.warn('getScreenDetails not supported, using fallback detection')
         
-        // Try to detect multiple screens using other methods
-        if (window.screen && window.screen.availWidth) {
+        // Enhanced fallback detection using proper screen dimensions
+        if (window.screen) {
           const totalWidth = window.screen.availWidth
           const totalHeight = window.screen.availHeight
+          const screenWidth = window.screen.width
+          const screenHeight = window.screen.height
           
-          // If total width is significantly larger than individual screen width, assume multiple screens
-          if (totalWidth > window.innerWidth * 1.5) {
+          // If total available area is significantly larger than screen size, assume multiple screens
+          if (totalWidth > screenWidth * 1.2 || totalHeight > screenHeight * 1.2) {
             const fallbackScreens = [
               {
                 id: 0,
                 left: 0,
                 top: 0,
-                width: window.innerWidth,
-                height: window.innerHeight
-              },
-              {
-                id: 1,
-                left: window.innerWidth,
-                top: 0,
-                width: window.innerWidth,
-                height: window.innerHeight
+                width: screenWidth,
+                height: screenHeight
               }
             ]
-            console.log('Detected multiple screens using fallback method:', fallbackScreens)
+            
+            // Estimate second screen position based on total dimensions
+            if (totalWidth > screenWidth * 1.2) {
+              // Horizontal layout
+              fallbackScreens.push({
+                id: 1,
+                left: screenWidth,
+                top: 0,
+                width: Math.min(screenWidth, totalWidth - screenWidth),
+                height: screenHeight
+              })
+            } else if (totalHeight > screenHeight * 1.2) {
+              // Vertical layout
+              fallbackScreens.push({
+                id: 1,
+                left: 0,
+                top: screenHeight,
+                width: screenWidth,
+                height: Math.min(screenHeight, totalHeight - screenHeight)
+              })
+            }
+            
+            console.log('Detected multiple screens using enhanced fallback method:', fallbackScreens)
             setScreens(fallbackScreens)
             return fallbackScreens
           }
@@ -154,8 +196,10 @@ export function useMultiScreen() {
         throw new Error('Failed to assign screen role')
       }
 
-      // If this is the current screen, update local state
-      if (screenId === 0) { // Assuming current screen is always index 0
+      // Update local state for the correct screen
+      // Find current screen by comparing with current window position
+      const currentScreenId = await getCurrentScreenId()
+      if (screenId === currentScreenId) {
         setCurrentRole(role)
       }
 
@@ -283,17 +327,43 @@ export function useMultiScreen() {
         return
       }
 
-      // Find the corresponding screen coordinates from our local screens state
-      const detailedScreen = screens.find(screen => screen.id === detailedScreenRole.screenId)
+      // Enhanced screen matching with multiple fallback strategies
+      let detailedScreen = screens.find(screen => 
+        screen.id === detailedScreenRole.screenId ||
+        screen.id === parseInt(detailedScreenRole.screenId?.toString() || '0')
+      )
       
       console.log('Screen roles:', screenRoles)
       console.log('Detailed screen role:', detailedScreenRole)
       console.log('All screens:', screens)
       console.log('Found detailed screen:', detailedScreen)
       
+      // Fallback strategies if exact match not found
       if (!detailedScreen) {
-        // Fallback to regular window open if screen coordinates not found
-        console.warn('Detailed screen coordinates not found, falling back to new tab')
+        console.warn('Exact screen match not found, trying fallback strategies')
+        
+        // Strategy 1: Use any non-primary screen
+        detailedScreen = screens.find(screen => screen.id !== 0)
+        
+        // Strategy 2: If only two screens, use the other one
+        if (!detailedScreen && screens.length === 2) {
+          const currentScreenId = await getCurrentScreenId()
+          detailedScreen = screens.find(screen => screen.id !== currentScreenId)
+        }
+        
+        // Strategy 3: Use largest available screen
+        if (!detailedScreen) {
+          detailedScreen = screens.reduce((largest, current) => 
+            (current.width * current.height) > (largest.width * largest.height) ? current : largest
+          )
+        }
+        
+        console.log('Using fallback screen:', detailedScreen)
+      }
+      
+      if (!detailedScreen) {
+        // Final fallback to regular window open if no screen found
+        console.warn('No suitable screen found, falling back to new tab')
         const url = type === 'flight' ? `/detailed/${id}` : `/detailed/${type}`
         window.open(url, '_blank')
         return
@@ -325,12 +395,16 @@ export function useMultiScreen() {
           return
       }
 
-      // Calculate window dimensions and position
+      // Enhanced window dimensions and position calculation
       const { left, top, width, height } = detailedScreen
-      const windowWidth = Math.min(width - 100, 1400)
-      const windowHeight = Math.min(height - 100, 900)
-      const windowLeft = left + 50
-      const windowTop = top + 50
+      
+      // Calculate optimal window size (80% of screen with constraints)
+      const windowWidth = Math.max(800, Math.min(width * 0.8, 1600))
+      const windowHeight = Math.max(600, Math.min(height * 0.8, 1200))
+      
+      // Center window on target screen
+      const windowLeft = left + (width - windowWidth) / 2
+      const windowTop = top + (height - windowHeight) / 2
       
       console.log('Window positioning details:')
       console.log('  Screen coordinates:', { left, top, width, height })
@@ -341,47 +415,92 @@ export function useMultiScreen() {
       // Try multiple approaches to open window on correct screen
       let newWindow: Window | null = null
 
-      // Method 1: Try with explicit positioning
+      // Method 1: Enhanced direct positioning with better feature string
+      const features = [
+        `left=${Math.round(windowLeft)}`,
+        `top=${Math.round(windowTop)}`,
+        `width=${Math.round(windowWidth)}`,
+        `height=${Math.round(windowHeight)}`,
+        'scrollbars=yes',
+        'resizable=yes',
+        'status=no',
+        'toolbar=no',
+        'menubar=no',
+        'location=no'
+      ].join(',')
+      
       try {
-        newWindow = window.open(
-          url,
-          windowName,
-          `left=${windowLeft},top=${windowTop},width=${windowWidth},height=${windowHeight},scrollbars=yes,resizable=yes,status=yes,toolbar=no,menubar=no,location=no`
-        )
+        console.log('Method 1: Attempting direct positioning with features:', features)
+        newWindow = window.open(url, windowName, features)
         
         if (newWindow && !newWindow.closed) {
-          // Verify the window opened successfully
-          console.log('Window opened with positioning:', { left: windowLeft, top: windowTop, width: windowWidth, height: windowHeight })
+          console.log('✅ Method 1 successful: Window opened with direct positioning')
+          
+          // Verify positioning after brief delay
+          setTimeout(() => {
+            if (newWindow && !newWindow.closed) {
+              const actualX = newWindow.screenX || newWindow.screenLeft || 0
+              const actualY = newWindow.screenY || newWindow.screenTop || 0
+              console.log('Position verification:', {
+                expected: { x: Math.round(windowLeft), y: Math.round(windowTop) },
+                actual: { x: actualX, y: actualY },
+                onCorrectScreen: actualX >= left && actualX <= (left + width) && actualY >= top && actualY <= (top + height)
+              })
+            }
+          }, 1000)
         }
       } catch (error) {
-        console.warn('Failed to open window with positioning:', error)
+        console.warn('Method 1 failed:', error)
       }
 
-      // Method 2: If Method 1 failed, try without positioning but with screen-specific features
+      // Method 2: Enhanced open-then-position with multiple attempts
       if (!newWindow || newWindow.closed) {
         try {
-          // Open window without positioning first
-          newWindow = window.open(url, windowName, 'scrollbars=yes,resizable=yes,status=yes,toolbar=no,menubar=no,location=no')
+          console.log('Method 2: Open first, then position')
+          newWindow = window.open(url, windowName, 'scrollbars=yes,resizable=yes,toolbar=no,menubar=no')
           
           if (newWindow && !newWindow.closed) {
-            // Try to move the window to the correct screen after it opens
-            setTimeout(() => {
-              try {
-                if (newWindow && !newWindow.closed) {
-                  // Use moveTo and resizeTo if available
-                  if (typeof newWindow.moveTo === 'function' && typeof newWindow.resizeTo === 'function') {
-                    newWindow.moveTo(windowLeft, windowTop)
-                    newWindow.resizeTo(windowWidth, windowHeight)
-                    console.log('Window moved and resized after opening')
+            console.log('✅ Window opened, attempting positioning...')
+            
+            // Multiple positioning attempts with increasing delays
+            const positionAttempts = [100, 300, 600, 1200]
+            let positionSuccess = false
+            
+            positionAttempts.forEach((delay, index) => {
+              setTimeout(() => {
+                if (newWindow && !newWindow.closed && !positionSuccess) {
+                  try {
+                    if (typeof newWindow.moveTo === 'function' && typeof newWindow.resizeTo === 'function') {
+                      newWindow.moveTo(Math.round(windowLeft), Math.round(windowTop))
+                      newWindow.resizeTo(Math.round(windowWidth), Math.round(windowHeight))
+                      
+                      // Verify positioning
+                      setTimeout(() => {
+                        if (newWindow && !newWindow.closed) {
+                          const actualX = newWindow.screenX || newWindow.screenLeft || 0
+                          const actualY = newWindow.screenY || newWindow.screenTop || 0
+                          const onTargetScreen = actualX >= left && actualX <= (left + width) && actualY >= top && actualY <= (top + height)
+                          
+                          if (onTargetScreen && !positionSuccess) {
+                            positionSuccess = true
+                            console.log(`✅ Method 2 successful: Window positioned on attempt ${index + 1}`)
+                          } else if (index === positionAttempts.length - 1) {
+                            console.warn('❌ Method 2: All positioning attempts failed')
+                          }
+                        }
+                      }, 100)
+                    } else {
+                      console.warn('Window moveTo/resizeTo methods not available')
+                    }
+                  } catch (moveError) {
+                    console.warn(`Position attempt ${index + 1} failed:`, moveError)
                   }
                 }
-              } catch (moveError) {
-                console.warn('Failed to move window after opening:', moveError)
-              }
-            }, 100)
+              }, delay)
+            })
           }
         } catch (error) {
-          console.warn('Failed to open window without positioning:', error)
+          console.warn('Method 2 failed:', error)
         }
       }
 
@@ -408,7 +527,11 @@ export function useMultiScreen() {
               type: 'DETAILED_VIEW_DATA', 
               viewType: type, 
               id,
-              timestamp: Date.now()
+              timestamp: Date.now(),
+              screenInfo: {
+                targetScreen: detailedScreen,
+                allScreens: screens
+              }
             }, '*')
             
             // Send current theme to synchronize

@@ -17,6 +17,7 @@ import { MetricsCard } from "@/components/metrics-card"
 import { RoleAssignmentModal } from "@/components/role-assignment-modal"
 import { useMultiScreen } from "@/hooks/use-multi-screen"
 import { MultiScreenDebug } from "@/components/multi-screen-debug"
+import { MultiScreenTest } from "@/components/multi-screen-test"
 import { WeatherDashboard } from "@/components/weather"
 
 export default function DashboardPage() {
@@ -605,8 +606,9 @@ export default function DashboardPage() {
       {/* Debug Panel */}
       {showDebugPanel && (
         <div className="fixed inset-0 z-40 bg-black/50 flex items-center justify-center p-4">
-          <div className="w-full max-w-6xl max-h-[90vh] overflow-y-auto">
+          <div className="w-full max-w-6xl max-h-[90vh] overflow-y-auto space-y-4">
             <MultiScreenDebug />
+            <MultiScreenTest />
             <div className="mt-4 text-center">
               <Button onClick={() => setShowDebugPanel(false)} variant="outline">
                 Close Debug Panel
