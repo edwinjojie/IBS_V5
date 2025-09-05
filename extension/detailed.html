@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AirOps - Detailed View</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #f5f5f5;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+        .header {
+            background: #1f2937;
+            color: white;
+            padding: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        .content {
+            flex: 1;
+            padding: 2rem;
+            overflow-y: auto;
+        }
+        .loading {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 200px;
+            font-size: 1.1rem;
+            color: #666;
+        }
+        .iframe-container {
+            width: 100%;
+            height: calc(100vh - 80px);
+            border: none;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        iframe {
+            width: 100%;
+            height: 100%;
+            border: none;
+        }
+        .error {
+            background: #fee;
+            border: 1px solid #fcc;
+            color: #c33;
+            padding: 1rem;
+            border-radius: 4px;
+            margin: 1rem 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <span>✈️</span>
+        <h1 id="page-title">AirOps - Detailed View</h1>
+        <div style="margin-left: auto; font-size: 0.9rem;" id="screen-info"></div>
+    </div>
+    
+    <div class="content">
+        <div id="loading" class="loading">
+            Loading detailed view...
+        </div>
+        
+        <div id="error" class="error" style="display: none;">
+            <strong>Connection Error:</strong>
+            <p>Could not connect to the main dashboard. Please ensure your dashboard is running at <code>http://localhost:3000</code></p>
+        </div>
+        
+        <div id="iframe-container" class="iframe-container" style="display: none;">
+            <iframe id="detailed-frame" sandbox="allow-scripts allow-same-origin allow-forms allow-popups"></iframe>
+        </div>
+    </div>
+
+    <script>
+        // Parse URL parameters
+        const urlParams = new URLSearchParams(window.location.search)
+        const viewType = urlParams.get('type') || 'alerts'
+        const itemId = urlParams.get('id')
+        
+        // Update title and screen info
+        const titles = {
+            flight: itemId ? `Flight ${itemId}` : 'Flight Details',
+            alerts: 'Alerts Dashboard', 
+            metrics: 'Metrics Dashboard',
+            operations: 'Operations Dashboard'
+        }
+        
+        document.getElementById('page-title').textContent = `AirOps - ${titles[viewType] || 'Detailed View'}`
+        
+        // Display screen information
+        const screenInfo = document.getElementById('screen-info')
+        screenInfo.textContent = `Screen: ${screen.width}×${screen.height} | Position: ${screen.availLeft}, ${screen.availTop}`
+        
+        // Construct iframe URL
+        let iframeUrl = 'http://localhost:3000'
+        
+        if (viewType === 'flight' && itemId) {
+            iframeUrl += `/detailed/${itemId}`
+        } else {
+            iframeUrl += `/detailed/${viewType}`
+        }
+        
+        console.log('Extension detailed view:', {
+            viewType,
+            itemId,
+            iframeUrl,
+            screenInfo: {
+                width: screen.width,
+                height: screen.height,
+                left: screen.availLeft,
+                top: screen.availTop
+            }
+        })
+        
+        // Load the iframe
+        const iframe = document.getElementById('detailed-frame')
+        const loading = document.getElementById('loading')
+        const error = document.getElementById('error')
+        const iframeContainer = document.getElementById('iframe-container')
+        
+        // Set iframe source
+        iframe.src = iframeUrl
+        
+        // Handle iframe load
+        iframe.onload = () => {
+            loading.style.display = 'none'
+            error.style.display = 'none'
+            iframeContainer.style.display = 'block'
+            console.log('Iframe loaded successfully')
+        }
+        
+        // Handle iframe error
+        iframe.onerror = () => {
+            loading.style.display = 'none'
+            iframeContainer.style.display = 'none'
+            error.style.display = 'block'
+            console.error('Failed to load iframe')
+        }
+        
+        // Timeout after 10 seconds
+        setTimeout(() => {
+            if (loading.style.display !== 'none') {
+                loading.style.display = 'none'
+                error.style.display = 'block'
+                console.error('Iframe load timeout')
+            }
+        }, 10000)
+        
+        // Listen for theme changes from main window
+        window.addEventListener('message', (event) => {
+            if (event.data.type === 'THEME_CHANGE') {
+                document.body.className = event.data.theme
+            }
+        })
+    </script>
+</body>
+</html>
