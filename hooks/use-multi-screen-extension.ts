@@ -14,6 +14,16 @@ interface ScreenRole {
   role: 'general' | 'detailed'
 }
 
+type LayoutType = 'grid' | 'rows' | 'columns' | 'custom'
+
+interface LayoutOptions {
+  layout?: LayoutType
+  totalSlots?: number
+  slotIndex?: number
+  paddingPx?: number
+  explicitRect?: { left: number; top: number; width: number; height: number }
+}
+
 export function useMultiScreenExtension() {
   const [screens, setScreens] = useState<Screen[]>([])
   const [screenRoles, setScreenRoles] = useState<ScreenRole[]>([])
@@ -109,7 +119,7 @@ export function useMultiScreenExtension() {
   }, [extensionAvailable])
 
   // Pop out detailed view to correct screen
-  const popOutDetailedView = useCallback(async (type: 'flight' | 'alerts' | 'metrics' | 'operations', id?: string) => {
+  const popOutDetailedView = useCallback(async (type: 'flight' | 'alerts' | 'metrics' | 'operations', id?: string, layoutOptions?: LayoutOptions) => {
     console.log('=== Pop Out Detailed View (Extension) ===')
     console.log('Type:', type, 'ID:', id)
     console.log('Extension available:', extensionAvailable)
@@ -131,10 +141,7 @@ export function useMultiScreenExtension() {
 
     try {
       // Use extension to open window on correct screen
-      const result = await window.AirOpsExtension.popOutDetailedView(type, id, {
-        width: 1200,
-        height: 800
-      })
+      const result = await window.AirOpsExtension.popOutDetailedView(type, id, layoutOptions || { width: 1200, height: 800 })
 
       if (result.success) {
         console.log(`🎉 SUCCESS! Window opened on screen ${result.screen}`)

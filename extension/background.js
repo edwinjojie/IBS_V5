@@ -43,10 +43,11 @@ class MultiScreenManager {
     }
 
     // Calculate window position on target screen
-    const windowWidth = options.width || Math.min(1200, screen.width * 0.8)
-    const windowHeight = options.height || Math.min(800, screen.height * 0.8)
-    const left = screen.left + (screen.width - windowWidth) / 2
-    const top = screen.top + (screen.height - windowHeight) / 2
+    const hasExplicit = typeof options.left === 'number' && typeof options.top === 'number' && typeof options.width === 'number' && typeof options.height === 'number'
+    const windowWidth = hasExplicit ? options.width : (options.width || Math.min(1200, screen.width * 0.8))
+    const windowHeight = hasExplicit ? options.height : (options.height || Math.min(800, screen.height * 0.8))
+    const left = hasExplicit ? options.left : (screen.left + (screen.width - windowWidth) / 2)
+    const top = hasExplicit ? options.top : (screen.top + (screen.height - windowHeight) / 2)
 
     try {
       // Use Chrome's windows API with elevated permissions
@@ -157,8 +158,8 @@ async function handlePopupDetailedView(message) {
 
   // Create window on specified screen
   const window = await multiScreenManager.createWindowOnScreen(
-    url, 
-    detailedScreenId, 
+    url,
+    detailedScreenId,
     options
   )
 

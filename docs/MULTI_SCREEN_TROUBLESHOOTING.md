@@ -16,6 +16,7 @@ wi# Multi-Screen Troubleshooting Guide
 **Solution**: 
 - Use multiple fallback methods (implemented in updated code)
 - Try `moveTo()` and `resizeTo()` after window opens
+- Pass explicit coordinates via extension path for precise placement
 - Fall back to new tab if all else fails
 
 #### **3. Screen Detection Issues**
@@ -47,6 +48,11 @@ wi# Multi-Screen Troubleshooting Guide
 2. Watch console for detailed logs
 3. Check if windows open and where
 
+### **Step 5: Verify Layout Preferences**
+1. Open Developer Tools (F12)
+2. Check localStorage keys: `ms_layout`, `ms_totalSlots`, `ms_paddingPx`, `ms_nextSlotIndex`
+3. Confirm values match expected layout behavior
+
 ## 🧪 **Testing Multi-Screen Functionality**
 
 ### **Manual Test 1: Basic Window Opening**
@@ -74,6 +80,15 @@ if (posWindow) {
 ```
 
 ### **Manual Test 3: Screen Detection**
+### **Manual Test 4: Layout Slot Calculation**
+```javascript
+// In browser console
+// Trigger several popOuts and verify the nextSlotIndex cycles
+localStorage.setItem('ms_layout', 'grid')
+localStorage.setItem('ms_totalSlots', '4')
+localStorage.setItem('ms_paddingPx', '16')
+localStorage.setItem('ms_nextSlotIndex', '0')
+```
 ```javascript
 // In browser console
 if ('getScreenDetails' in window) {
@@ -107,6 +122,11 @@ if ('getScreenDetails' in window) {
 - Use debug panel to test capabilities
 
 ### **Issue 4: Screen Detection Fails**
+### **Issue 5: Windows Not Filling Expected Slots**
+**Fix**:
+- Confirm layout keys in localStorage
+- Check that `slotIndex` is not being forced by caller
+- Verify extension is honoring explicit coordinates (if used)
 **Fix**:
 - Check browser compatibility
 - Verify multi-screen API support

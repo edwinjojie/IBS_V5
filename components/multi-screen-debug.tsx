@@ -86,7 +86,12 @@ export function MultiScreenDebug() {
   const testDetailedView = async (type: 'alerts' | 'metrics' | 'operations') => {
     try {
       console.log(`Testing detailed view: ${type}`)
-      await popOutDetailedView(type)
+      await popOutDetailedView(type, undefined, {
+        layout: 'grid',
+        totalSlots: 4,
+        // Leave slotIndex undefined to auto-cycle across slots
+        paddingPx: 16
+      })
       setTestResults(prev => [...prev, `✅ Tested ${type} detailed view`])
     } catch (error) {
       setTestResults(prev => [...prev, `❌ Failed to test ${type}: ${error}`])

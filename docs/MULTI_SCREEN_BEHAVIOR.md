@@ -9,9 +9,10 @@
 
 ### **Multiple Screen Setup (>1 screen detected)**
 - **Step 1**: User is prompted to assign screen roles (Primary/Secondary)
-- **Step 2**: After role assignment, detailed views open in **new windows** on the secondary screen
-- **Method**: Uses `window.open()` with positioning on the secondary screen
-- **User Experience**: Multi-screen workflow with dedicated detailed view windows
+- **Step 2**: User selects a layout (Grid/Rows/Columns), total slots, and padding
+- **Step 3**: Detailed views open in **new windows** on the secondary screen, positioned into the selected layout slots
+- **Method**: Uses `window.open()` with calculated coordinates; attempts `moveTo/resizeTo` as needed; extension honors exact coordinates
+- **User Experience**: Multi-screen workflow with predictable placement across multiple popped-out windows
 
 ## 🔄 **Flow Diagram**
 
@@ -38,7 +39,7 @@ User clicks "Pop Out Detailed View"
                                     ↓               ↓
                            Open new window    Show role
                            on secondary      assignment
-                           screen            modal
+                           screen (slot)     + layout controls
                                     ↓               ↓
                            ✅ Complete       User assigns
                                            roles, then
@@ -59,11 +60,11 @@ User clicks "Pop Out Detailed View"
 3. **Expected**: Role assignment modal appears
 4. **Result**: ✅ User is prompted to assign screen roles
 
-### **Test 3: Multiple Screens - Roles Assigned**
+### **Test 3: Multiple Screens - Roles Assigned & Layout Set**
 1. **Setup**: Connect multiple monitors and assign roles
-2. **Action**: Click "Pop Out Metrics Dashboard" after assigning roles
-3. **Expected**: New window opens on secondary screen
-4. **Result**: ✅ Detailed view opens in new window on correct screen
+2. **Action**: Choose layout Grid with 4 slots, padding 16. Click "Pop Out Metrics Dashboard"
+3. **Expected**: New window opens on secondary screen in slot 0; next pop-out uses slot 1, etc.
+4. **Result**: ✅ Detailed views fill slots in order
 
 ## 🔧 **Technical Implementation**
 
@@ -88,8 +89,8 @@ if (!detailedScreenRole) {
   return
 }
 
-// Open window on secondary screen with positioning
-const newWindow = window.open(url, windowName, windowFeatures)
+// Compute layout rect and open window on secondary screen
+await popOutDetailedView(type, id, { layout: 'grid', totalSlots: 4, /* slotIndex optional */ })
 ```
 
 ### **Fallback Logic**
@@ -100,7 +101,7 @@ if (!newWindow || newWindow.closed) {
     // Single screen - open new tab as fallback
     newWindow = window.open(url, '_blank')
   } else {
-    // Multiple screens - try new tab as last resort
+    // Multiple screens - try new tab as last resort (layout intent preserved best-effort)
     newWindow = window.open(url, '_blank')
   }
 }
@@ -151,7 +152,8 @@ console.log('Screens detected:', window.screens?.length || 'Not supported')
 
 - [ ] Single screen: Detailed views open in new tab
 - [ ] Multiple screens: Role assignment modal appears when needed
-- [ ] Multiple screens with roles: Detailed views open in new windows on secondary screen
+- [ ] Layout controls appear and persist preferences
+- [ ] Multiple screens with roles: Detailed views open in layout slots in order
 - [ ] Fallback behavior works correctly for both scenarios
 - [ ] Error handling gracefully degrades based on screen count
 

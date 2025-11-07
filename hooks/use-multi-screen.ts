@@ -16,6 +16,79 @@ interface ScreenRole {
   sessionId: string
 }
 
+type LayoutType = 'grid' | 'rows' | 'columns' | 'custom'
+
+interface LayoutOptions {
+  layout?: LayoutType
+  totalSlots?: number
+  slotIndex?: number
+  paddingPx?: number
+  explicitRect?: { left: number; top: number; width: number; height: number }
+}
+
+function calculateLayoutRect(
+  screen: { left: number; top: number; width: number; height: number },
+  options: Required<Pick<LayoutOptions, 'layout' | 'totalSlots' | 'slotIndex' | 'paddingPx'>>
+) {
+  const { left, top, width, height } = screen
+  const padding = Math.max(0, Math.min(options.paddingPx, Math.min(width, height) / 10))
+  const innerLeft = left + padding
+  const innerTop = top + padding
+  const innerWidth = Math.max(100, width - padding * 2)
+  const innerHeight = Math.max(80, height - padding * 2)
+
+  const total = Math.max(1, options.totalSlots)
+  const index = Math.min(Math.max(0, options.slotIndex), total - 1)
+
+  // Choose rows/cols based on layout
+  let rows = 1
+  let cols = 1
+  if (options.layout === 'rows') {
+    rows = total
+    cols = 1
+  } else if (options.layout === 'columns') {
+    rows = 1
+    cols = total
+  } else {
+    // grid: pick near-square grid
+    cols = Math.ceil(Math.sqrt(total))
+    rows = Math.ceil(total / cols)
+  }
+
+  const cellWidth = Math.floor(innerWidth / cols)
+  const cellHeight = Math.floor(innerHeight / rows)
+
+  const rowIndex = Math.floor(index / cols)
+  const colIndex = index % cols
+
+  return {
+    left: Math.round(innerLeft + colIndex * cellWidth),
+    top: Math.round(innerTop + rowIndex * cellHeight),
+    width: Math.max(300, Math.round(cellWidth)),
+    height: Math.max(200, Math.round(cellHeight))
+  }
+}
+
+function readLayoutPrefs(): { layout: LayoutType; totalSlots: number; nextSlotIndex: number; paddingPx: number } {
+  try {
+    const layout = (localStorage.getItem('ms_layout') as LayoutType) || 'grid'
+    const totalSlots = parseInt(localStorage.getItem('ms_totalSlots') || '2', 10) || 2
+    const nextSlotIndex = parseInt(localStorage.getItem('ms_nextSlotIndex') || '0', 10) || 0
+    const paddingPx = parseInt(localStorage.getItem('ms_paddingPx') || '16', 10) || 16
+    return { layout, totalSlots, nextSlotIndex, paddingPx }
+  } catch {
+    return { layout: 'grid', totalSlots: 2, nextSlotIndex: 0, paddingPx: 16 }
+  }
+}
+
+function bumpNextSlot(totalSlots: number) {
+  try {
+    const current = parseInt(localStorage.getItem('ms_nextSlotIndex') || '0', 10) || 0
+    const next = (current + 1) % Math.max(1, totalSlots)
+    localStorage.setItem('ms_nextSlotIndex', String(next))
+  } catch {}
+}
+
 export function useMultiScreen() {
   const [screens, setScreens] = useState<Screen[]>([])
   const [currentRole, setCurrentRole] = useState<'general' | 'detailed' | null>(null)
@@ -299,7 +372,11 @@ export function useMultiScreen() {
   }, [stableDeviceId, stableSessionId])
 
   // Pop out detailed view to appropriate screen
-  const popOutDetailedView = useCallback(async (type: 'flight' | 'alerts' | 'metrics' | 'operations', id?: string) => {
+  const popOutDetailedView = useCallback(async (
+    type: 'flight' | 'alerts' | 'metrics' | 'operations',
+    id?: string,
+    layoutOptions?: LayoutOptions
+  ) => {
     try {
       // Check if we have multiple screens first
       if (screens.length <= 1) {
@@ -395,16 +472,29 @@ export function useMultiScreen() {
           return
       }
 
-      // Enhanced window dimensions and position calculation
+      // Compute target rect from layout options or defaults
       const { left, top, width, height } = detailedScreen
-      
-      // Calculate optimal window size (80% of screen with constraints)
-      const windowWidth = Math.max(800, Math.min(width * 0.8, 1600))
-      const windowHeight = Math.max(600, Math.min(height * 0.8, 1200))
-      
-      // Center window on target screen
-      const windowLeft = left + (width - windowWidth) / 2
-      const windowTop = top + (height - windowHeight) / 2
+
+      let rect: { left: number; top: number; width: number; height: number }
+
+      if (layoutOptions?.explicitRect) {
+        rect = layoutOptions.explicitRect
+      } else {
+        const prefs = readLayoutPrefs()
+        const effective = {
+          layout: layoutOptions?.layout || prefs.layout,
+          totalSlots: layoutOptions?.totalSlots || prefs.totalSlots,
+          slotIndex: layoutOptions?.slotIndex ?? prefs.nextSlotIndex,
+          paddingPx: layoutOptions?.paddingPx ?? prefs.paddingPx
+        }
+        rect = calculateLayoutRect({ left, top, width, height }, effective)
+        // advance slot for next pop
+        if (layoutOptions?.slotIndex === undefined) bumpNextSlot(effective.totalSlots)
+      }
+      const windowLeft = rect.left
+      const windowTop = rect.top
+      const windowWidth = rect.width
+      const windowHeight = rect.height
       
       console.log('Window positioning details:')
       console.log('  Screen coordinates:', { left, top, width, height })

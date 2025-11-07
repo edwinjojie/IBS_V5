@@ -7,10 +7,11 @@ The Multi-Screen Feature in IBS_V5 enables the aviation dashboard to detect conn
 ## Architecture
 
 ### Frontend Components
-- **`useMultiScreen` Hook**: Manages screen detection, role assignment, and window placement
+- **`useMultiScreen` Hook**: Manages screen detection, role assignment, window placement, and layout slotting
 - **`RoleAssignmentModal`**: UI for assigning screen roles when multiple monitors are detected
 - **`DetailedFlightView`**: Component for displaying comprehensive flight information
 - **Enhanced Dashboard**: Main dashboard with integrated multi-screen functionality
+ - **Debug Tools**: `MultiScreenDebug` and `MultiScreenTest` for verification
 
 ### Backend Services
 - **Screen Management API**: Endpoints for managing screen roles and coordinates
@@ -18,10 +19,11 @@ The Multi-Screen Feature in IBS_V5 enables the aviation dashboard to detect conn
 - **Authentication**: JWT-based security for screen management
 
 ### Data Flow
-1. **Detection**: Browser detects available screens using Window Management API
+1. **Detection**: Browser detects available screens using Window Management API (or enhanced fallback)
 2. **Role Assignment**: User assigns roles (general/detailed) to each screen
-3. **Configuration Storage**: Screen roles and coordinates stored in MongoDB
-4. **Window Placement**: Detailed views automatically placed on designated detailed screens
+3. **Layout Selection**: User selects a layout preset and slot count for secondary screen placements
+4. **Configuration Storage**: Screen roles and preferences stored (backend + localStorage)
+5. **Window Placement**: Detailed views placed into layout slots on designated detailed screens
 
 ## Implementation Details
 
@@ -80,28 +82,25 @@ const assignRole = async (screenId: number, role: 'general' | 'detailed') => {
 }
 ```
 
-### 3. Window Placement
+### 3. Window Placement & Layouts
 
-Detailed flight views are automatically positioned on screens assigned the "detailed" role:
+Detailed views are positioned on the screen assigned the "detailed" role. When multiple windows are popped out, they are placed into layout slots per user preference.
 
 ```typescript
-const popOutDetailedView = async (flightId: string) => {
-  const detailedScreen = screens.find(screen => screen.id === 1)
-  
-  if (detailedScreen) {
-    const { left, top, width, height } = detailedScreen
-    const newWindow = window.open(
-      `/detailed/${flightId}`,
-      '_blank',
-      `left=${left},top=${top},width=${width},height=${height}`
-    )
-    
-    // Send flight ID to the new window
-    newWindow.addEventListener('load', () => {
-      newWindow.postMessage({ flightId }, '*')
-    })
+type LayoutType = 'grid' | 'rows' | 'columns' | 'custom'
+
+// Web API path (hooks/use-multi-screen.ts)
+const popOutDetailedView = async (
+  type: 'flight' | 'alerts' | 'metrics' | 'operations',
+  id?: string,
+  layoutOptions?: {
+    layout?: LayoutType
+    totalSlots?: number
+    slotIndex?: number
+    paddingPx?: number
+    explicitRect?: { left: number; top: number; width: number; height: number }
   }
-}
+) => { /* ... */ }
 ```
 
 ### 4. Data Transfer
@@ -189,8 +188,9 @@ Gets screen information for a specific device and session.
 ### Multi-Screen Setup
 1. **Detection**: System automatically detects multiple monitors
 2. **Role Assignment**: Modal prompts user to assign roles to each screen
-3. **Configuration**: Roles are saved and persist across sessions
-4. **Optimization**: Detailed views automatically open on designated detailed screens
+3. **Layout Selection**: Choose layout type (grid/rows/columns), total slots, and padding
+4. **Configuration**: Roles and layout preferences are persisted (localStorage + backend)
+5. **Placement**: Detailed views open on the detailed screen and fill the next available slot
 
 ### Role Benefits
 
@@ -216,11 +216,12 @@ Gets screen information for a specific device and session.
 - **Safari**: Limited support (fallback to single screen)
 
 ### Fallback Behavior
-For browsers without multi-screen support:
+For browsers without multi-screen APIs or with strict popup policies:
 - Single screen detection
 - Automatic "general" role assignment
 - Detailed views open in new tabs/windows
-- No functionality loss
+- Open-then-position attempts (`moveTo/resizeTo`) where permitted
+- Layout intent is preserved; coordinates are best-effort
 
 ## Security Considerations
 
@@ -243,6 +244,7 @@ For browsers without multi-screen support:
 
 ### Caching
 - Screen configurations cached in localStorage
+- Layout preferences cached: `ms_layout`, `ms_totalSlots`, `ms_paddingPx`, `ms_nextSlotIndex`
 - Session data cached for quick access
 - Reduced API calls for repeated operations
 
@@ -273,6 +275,12 @@ Enable debug logging for troubleshooting:
 console.log('Detected screens:', screens)
 console.log('Current role:', currentRole)
 console.log('Window placement:', { left, top, width, height })
+console.log('Layout prefs:', {
+  layout: localStorage.getItem('ms_layout'),
+  totalSlots: localStorage.getItem('ms_totalSlots'),
+  paddingPx: localStorage.getItem('ms_paddingPx'),
+  nextSlotIndex: localStorage.getItem('ms_nextSlotIndex')
+})
 ```
 
 ## Future Enhancements
@@ -294,7 +302,7 @@ console.log('Window placement:', { left, top, width, height })
 ### Test Scenarios
 1. **Single Monitor**: Verify fallback behavior
 2. **Dual Monitor**: Test role assignment and window placement
-3. **Multiple Monitors**: Validate complex configurations
+3. **Multiple Monitors**: Validate layout slotting (grid/rows/columns) and auto-slot cycling
 4. **Browser Compatibility**: Test across different browsers
 5. **Error Handling**: Test network failures and edge cases
 
@@ -325,6 +333,6 @@ Use the provided seed data for consistent testing:
 
 ## Conclusion
 
-The Multi-Screen Feature significantly enhances the IBS_V5 aviation dashboard by providing intelligent monitor management and optimized workflow layouts. The implementation follows modern web standards while maintaining backward compatibility and robust error handling.
+The Multi-Screen Feature significantly enhances the IBS_V5 aviation dashboard by providing intelligent monitor management and optimized workflow layouts. The latest implementation adds slot-based layouts, persistent preferences, and extension support for precise placement, while maintaining robust fallbacks.
 
 This feature is particularly valuable for aviation operations centers, control rooms, and multi-monitor workstations where efficient information display and workflow optimization are critical for operational success.

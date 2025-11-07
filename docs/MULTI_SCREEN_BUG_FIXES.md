@@ -202,7 +202,7 @@ const features = [
   'location=no'
 ].join(',')
 
-// Method 1: Direct positioning
+// Method 1: Direct positioning (now supports layout slot rect)
 newWindow = window.open(url, windowName, features)
 
 // Method 2: Multiple positioning attempts if Method 1 fails
@@ -222,6 +222,31 @@ if (!newWindow || newWindow.closed) {
     })
   }
 }
+```
+
+### **Fix 6: Layout Slotting and Persistent Preferences**
+```typescript
+// NEW: Slot-based placement with persisted prefs
+popOutDetailedView(type, id, {
+  layout: 'grid',
+  totalSlots: 4,
+  // omit slotIndex to auto-cycle across slots
+  paddingPx: 16
+})
+
+// Persisted keys
+localStorage.setItem('ms_layout', 'grid')
+localStorage.setItem('ms_totalSlots', '4')
+localStorage.setItem('ms_paddingPx', '16')
+localStorage.setItem('ms_nextSlotIndex', '1')
+```
+
+### **Fix 7: Extension Honors Explicit Coordinates**
+```javascript
+// background.js
+const hasExplicit = typeof options.left === 'number' && typeof options.top === 'number' && typeof options.width === 'number' && typeof options.height === 'number'
+const windowWidth = hasExplicit ? options.width : (options.width || Math.min(1200, screen.width * 0.8))
+// ... use explicit left/top/width/height if provided
 ```
 
 ### **Fix 5: Position Verification System**
