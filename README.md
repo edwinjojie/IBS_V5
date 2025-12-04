@@ -13,6 +13,8 @@
 10. [Development Guidelines](#development-guidelines)
 11. [Deployment](#deployment)
 12. [Troubleshooting](#troubleshooting)
+13. [Multi-Screen Docs](#multi-screen-docs)
+14. [System Review Guide](#system-review-guide)
 
 ## System Overview
 
@@ -631,6 +633,34 @@ DEBUG=* npm run dev
 - **Issues**: GitHub issues repository
 - **Community**: React/Next.js community forums
 - **Tools**: Browser DevTools, Postman for API testing
+
+---
+
+## Multi-Screen Docs
+
+- Feature Overview: `docs/MULTI_SCREEN_FEATURE.md`
+- Behavior Guide: `docs/MULTI_SCREEN_BEHAVIOR.md`
+- Bug Fixes: `docs/MULTI_SCREEN_BUG_FIXES.md`
+- Troubleshooting: `docs/MULTI_SCREEN_TROUBLESHOOTING.md`
+- History/Changelog: `docs/MULTI_SCREEN_HISTORY.md`
+
+Key APIs:
+```ts
+// Hook call with layout options
+await popOutDetailedView('alerts', undefined, {
+  layout: 'grid',     // 'grid' | 'rows' | 'columns' | 'custom'
+  totalSlots: 4,
+  // slotIndex: 0,   // optional: auto-cycles if omitted
+  paddingPx: 16
+  // explicitRect: { left, top, width, height } // optional override
+})
+```
+
+---
+
+## System Review Guide
+
+See `docs/SYSTEM_REVIEW_GUIDE.md` for a comprehensive technical review guide (architecture, extension, backend APIs, testing, risks, and reviewer checklist).
 
 ---
 
